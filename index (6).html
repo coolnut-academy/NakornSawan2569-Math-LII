@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <meta name="description" content="LII Lens Lab — Mathematical proof of concept for Homography and Little’s Irregularity Index using simulated 2D data." />
+  <title>LII Lens Lab — Homography × Error Bound</title>
+  <style>
+    /* ========================= TOKENS ========================= */
+    :root{
+      --bg:#f6f8fb;
+      --surface:#ffffff;
+      --surface-2:#f8fbff;
+      --text:#0e1b2a;
+      --muted:#66768a;
+      --line:#dfe7f0;
+      --line-strong:#cbd7e5;
+      --blue:#1957d8;
+      --blue-2:#2f7af8;
+      --blue-soft:#eaf2ff;
+      --cyan:#0ea5b7;
+      --green:#12805c;
+      --green-soft:#e9f8f2;
+      --amber:#b56a00;
+      --amber-soft:#fff4df;
+      --red:#b43535;
+      --red-soft:#fff0f0;
+      --shadow:0 18px 60px rgba(31,62,99,.10);
+      --shadow-sm:0 8px 28px rgba(31,62,99,.08);
+      --radius:22px;
+      --radius-sm:14px;
+      --max:1200px;
+      --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+      --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai",Tahoma,sans-serif;
+    }
+
+    /* ========================= BASE ========================= */
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6}
+    body::before{
+      content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+      background:
+        radial-gradient(circle at 8% 2%,rgba(47,122,248,.10),transparent 24rem),
+        radial-gradient(circle at 92% 12%,rgba(14,165,183,.08),transparent 22rem),
+        linear-gradient(rgba(255,255,255,.72),rgba(246,248,251,.92));
+    }
+    a{color:inherit}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    img,svg,canvas{max-width:100%;display:block}
+    h1,h2,h3,p{margin-top:0}
+    h1{font-size:clamp(2.5rem,7vw,5.8rem);line-height:.96;letter-spacing:-.055em;margin-bottom:1.2rem}
+    h2{font-size:clamp(1.8rem,4vw,3.15rem);line-height:1.08;letter-spacing:-.035em;margin-bottom:.75rem}
+    h3{font-size:1.14rem;line-height:1.3;margin-bottom:.55rem}
+    section{scroll-margin-top:88px}
+    :focus-visible{outline:3px solid rgba(47,122,248,.35);outline-offset:3px}
+    .container{width:min(var(--max),calc(100% - 32px));margin-inline:auto}
+    .section{padding:92px 0}
+    .section.compact{padding:64px 0}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);margin-bottom:12px}
+    .eyebrow::before{content:"";width:28px;height:2px;background:currentColor;border-radius:10px}
+    .lead{font-size:clamp(1rem,1.8vw,1.18rem);color:var(--muted);max-width:760px}
+    .muted{color:var(--muted)}
+    .small{font-size:.88rem}
+    .tiny{font-size:.78rem}
+    .mono{font-family:var(--mono)}
+    .nowrap{white-space:nowrap}
+    .accent{color:var(--blue)}
+    .success{color:var(--green)}
+    .danger{color:var(--red)}
+    .warning{color:var(--amber)}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+    /* ========================= HEADER ========================= */
+    .site-header{position:sticky;top:0;z-index:50;border-bottom:1px solid rgba(203,215,229,.75);background:rgba(255,255,255,.84);backdrop-filter:blur(18px)}
+    .nav{height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:900;letter-spacing:-.02em}
+    .brand-mark{width:36px;height:36px;border-radius:11px;background:linear-gradient(145deg,var(--text),#263b57);display:grid;place-items:center;box-shadow:var(--shadow-sm)}
+    .brand-mark svg{width:22px;height:22px}
+    .nav-links{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .nav-links a{padding:9px 11px;border-radius:10px;text-decoration:none;color:#445468;font-size:.87rem;font-weight:700}
+    .nav-links a:hover{background:var(--blue-soft);color:var(--blue)}
+    .nav-pill{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid var(--line);background:#fff;border-radius:999px;font-size:.78rem;color:var(--muted);font-weight:800}
+    .status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 5px rgba(18,128,92,.10)}
+
+    /* ========================= COMPONENTS ========================= */
+    .hero{padding:76px 0 40px;min-height:calc(100vh - 72px);display:flex;align-items:center}
+    .hero-grid{display:grid;grid-template-columns:1.03fr .97fr;gap:54px;align-items:center}
+    .hero-copy .kicker{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.8);font-size:.8rem;font-weight:800;color:#42556e;margin-bottom:22px}
+    .hero-copy h1 .soft{color:#7990aa;font-weight:650}
+    .hero-copy .lead{font-size:1.14rem}
+    .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin:26px 0 24px}
+    .btn{border:0;border-radius:13px;padding:12px 16px;font-weight:850;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;min-height:46px;transition:.18s ease}
+    .btn:hover{transform:translateY(-1px)}
+    .btn-primary{background:var(--text);color:#fff;box-shadow:0 12px 30px rgba(14,27,42,.17)}
+    .btn-secondary{background:#fff;border:1px solid var(--line-strong);color:var(--text)}
+    .btn-blue{background:var(--blue);color:#fff}
+    .btn-ghost{background:transparent;color:var(--blue);padding-inline:8px}
+    .btn-sm{padding:8px 11px;min-height:38px;border-radius:10px;font-size:.85rem}
+    .hero-stats{display:flex;gap:20px;flex-wrap:wrap;margin-top:8px}
+    .hero-stat{display:flex;flex-direction:column;gap:1px}
+    .hero-stat strong{font-size:1.28rem;letter-spacing:-.03em}
+    .hero-stat span{font-size:.78rem;color:var(--muted);font-weight:700}
+
+    .visual-shell{position:relative;background:linear-gradient(160deg,#fff,#f3f8ff);border:1px solid var(--line);border-radius:32px;padding:18px;box-shadow:var(--shadow);overflow:hidden}
+    .visual-shell::after{content:"";position:absolute;inset:auto -18% -45% 20%;height:65%;background:radial-gradient(circle,rgba(47,122,248,.18),transparent 68%);pointer-events:none}
+    .visual-top{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 14px}
+    .mini-dots{display:flex;gap:6px}.mini-dots i{width:8px;height:8px;border-radius:50%;background:#d7e1ed}.mini-dots i:first-child{background:#90a8c6}
+    .formula-badge{font-family:var(--mono);font-size:.78rem;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;color:#50657d}
+    .hero-svg{width:100%;aspect-ratio:4/3;border-radius:22px;background:#fbfdff;border:1px solid #e8eef6}
+    .hero-formula{position:absolute;left:34px;bottom:30px;background:rgba(14,27,42,.94);color:#fff;border-radius:16px;padding:12px 15px;font-family:var(--mono);box-shadow:var(--shadow-sm);font-size:.85rem;z-index:2}
+
+    .grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+    .grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+    .card-pad{padding:24px}
+    .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+    .card-head p{margin:3px 0 0;color:var(--muted);font-size:.92rem}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;font-size:.74rem;font-weight:850;white-space:nowrap}
+    .badge-blue{background:var(--blue-soft);color:var(--blue)}
+    .badge-green{background:var(--green-soft);color:var(--green)}
+    .badge-amber{background:var(--amber-soft);color:var(--amber)}
+    .badge-red{background:var(--red-soft);color:var(--red)}
+    .rule{height:1px;background:var(--line);margin:20px 0}
+    .note{border-radius:15px;padding:14px 16px;background:#f8fbff;border:1px solid #dce9fb;color:#3e5675;font-size:.9rem}
+    .note strong{color:var(--text)}
+    .formula{font-family:var(--mono);font-size:clamp(1rem,2vw,1.22rem);background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:14px 16px;overflow:auto;color:#17345e}
+    .formula.big{font-size:clamp(1.15rem,2.8vw,1.65rem);font-weight:800;text-align:center;padding:20px}
+    .metric{padding:16px;border-radius:16px;background:#fbfcfe;border:1px solid var(--line)}
+    .metric label{display:block;font-size:.75rem;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+    .metric .value{font-family:var(--mono);font-weight:850;font-size:1.18rem;letter-spacing:-.03em}
+    .metric .sub{font-size:.76rem;color:var(--muted);margin-top:2px}
+    .metric.strong{background:var(--blue-soft);border-color:#cfe0ff}
+    .metric.strong .value{color:var(--blue)}
+
+    .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+    .control{display:flex;flex-direction:column;gap:6px;min-width:150px}
+    .control label{font-size:.78rem;color:var(--muted);font-weight:800}
+    select,input[type="number"],input[type="text"]{border:1px solid var(--line-strong);background:#fff;border-radius:11px;padding:10px 12px;color:var(--text);min-height:44px}
+    input[type="range"]{accent-color:var(--blue);width:100%}
+    .segmented{display:inline-flex;border:1px solid var(--line-strong);background:#f7f9fc;padding:4px;border-radius:12px;gap:4px}
+    .segmented button{border:0;background:transparent;border-radius:8px;padding:8px 11px;font-weight:800;color:#66788e;min-height:36px}
+    .segmented button.active{background:#fff;color:var(--blue);box-shadow:0 3px 12px rgba(34,70,114,.10)}
+
+    .step-list{display:grid;gap:12px}
+    .step{display:grid;grid-template-columns:38px 1fr;gap:12px;align-items:start;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fff}
+    .step-num{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--blue-soft);color:var(--blue);font-weight:900;font-family:var(--mono)}
+    .step strong{display:block;margin-bottom:2px}
+    .step p{margin:0;color:var(--muted);font-size:.88rem}
+
+    .section-title{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:34px}
+    .section-title .side{max-width:400px;color:var(--muted);font-size:.9rem}
+
+    /* ========================= SIMULATIONS ========================= */
+    .sim-panel{border:1px solid var(--line);background:#fbfdff;border-radius:18px;overflow:hidden;position:relative}
+    .sim-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);background:#fff}
+    .sim-toolbar strong{font-size:.88rem}
+    .sim-toolbar .hint{font-size:.75rem;color:var(--muted)}
+    .plot{width:100%;height:auto;aspect-ratio:16/9;touch-action:none}
+    .plot-grid line{stroke:#e8eef5;stroke-width:1}
+    .plot-axis{stroke:#aebdce;stroke-width:1.2}
+    .plot-poly{fill:none;stroke:var(--blue);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+    .plot-poly.raw{stroke:#c4661b}
+    .plot-poly.recovered{stroke:var(--green)}
+    .plot-point{fill:#fff;stroke:var(--blue);stroke-width:3;cursor:grab}
+    .plot-point:active{cursor:grabbing}
+    .plot-point.raw{stroke:#c4661b}.plot-point.recovered{stroke:var(--green)}
+    .point-label{font-size:12px;font-weight:850;fill:#45627f;pointer-events:none}
+    .eps-circle{fill:rgba(47,122,248,.06);stroke:rgba(47,122,248,.32);stroke-dasharray:5 5}
+    .pert-line{stroke:#9aaec5;stroke-width:1.2;stroke-dasharray:4 4}
+    .pert-point{fill:#fff;stroke:#b43535;stroke-width:3;cursor:grab}
+
+    .coord-table-wrap{overflow:auto;max-height:360px;border:1px solid var(--line);border-radius:14px}
+    table{border-collapse:collapse;width:100%}
+    th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:.86rem;vertical-align:middle}
+    th{position:sticky;top:0;background:#f7f9fc;color:#52667d;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;z-index:1}
+    tr:last-child td{border-bottom:0}
+    td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+    .coord-input{width:90px!important;min-height:36px!important;padding:6px 8px!important;font-family:var(--mono);font-size:.82rem}
+    .result-table td.match{color:var(--green);font-weight:800}
+    .result-table td.warn{color:var(--amber);font-weight:800}
+
+    .triple{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .triple .sim-panel .plot{aspect-ratio:4/3}
+    .triple-title{padding:11px 13px 0;font-size:.82rem;font-weight:900}
+
+    .proof-ladder{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}
+    .proof-node{padding:16px 12px;border:1px solid var(--line);border-radius:15px;background:#fff;text-align:center;position:relative}
+    .proof-node:not(:last-child)::after{content:"→";position:absolute;right:-13px;top:50%;transform:translateY(-50%);color:#9db0c5;font-weight:900;z-index:2}
+    .proof-node .math{font-family:var(--mono);font-size:1.05rem;font-weight:850;color:#1b497e}
+    .proof-node small{display:block;color:var(--muted);margin-top:5px}
+    .bound-meter{height:14px;border-radius:999px;background:#e9eef5;overflow:hidden;position:relative}
+    .bound-meter > span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--green),var(--blue));width:0%;transition:width .25s ease}
+    .bound-meter::after{content:"";position:absolute;right:0;top:-3px;width:2px;height:20px;background:var(--red)}
+
+    .matrix-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;font-family:var(--mono);font-size:.82rem;max-width:310px}
+    .matrix-grid span{padding:8px 7px;border-radius:8px;background:#f6f8fb;text-align:right;border:1px solid #edf1f6}
+
+    .canvas-wrap{border:1px solid var(--line);border-radius:16px;background:#fff;padding:12px}
+    #mcCanvas{width:100%;height:240px;border-radius:10px;background:#fbfdff}
+    .progress-track{height:8px;border-radius:999px;background:#e8eef5;overflow:hidden}
+    .progress-track span{display:block;height:100%;width:0;background:var(--blue);transition:width .15s linear}
+
+    .question-card{padding:18px;border:1px solid var(--line);border-radius:16px;background:#fff}
+    .question-card p{margin-bottom:12px}
+    .answer-options{display:grid;gap:8px}
+    .answer-options button{text-align:left;border:1px solid var(--line);background:#fbfcfe;padding:10px 12px;border-radius:11px;min-height:44px}
+    .answer-options button:hover{border-color:#b8c9dc;background:#f5f9ff}
+    .answer-options button.correct{border-color:#9ad9c2;background:var(--green-soft);color:#0b6c4b}
+    .answer-options button.wrong{border-color:#f0bcbc;background:var(--red-soft);color:#9a2e2e}
+    .owner-progress{display:flex;gap:8px;align-items:center}
+    .owner-progress i{width:10px;height:10px;border-radius:50%;background:#d9e2ec}
+    .owner-progress i.done{background:var(--green)}
+
+    .limitation{display:grid;grid-template-columns:44px 1fr;gap:14px;padding:16px 0;border-bottom:1px solid var(--line)}
+    .limitation:last-child{border-bottom:0}
+    .lim-icon{width:44px;height:44px;border-radius:13px;background:#f2f5f9;display:grid;place-items:center;font-weight:900;color:#50647b}
+
+    .debug{display:none;margin:24px auto 0;width:min(var(--max),calc(100% - 32px));background:#0f1e30;color:#d8e5f5;border-radius:18px;padding:18px;font-family:var(--mono);font-size:.8rem;box-shadow:var(--shadow)}
+    .debug.show{display:block}
+    .debug .pass{color:#79e0bb}.debug .fail{color:#ff9c9c}
+
+    footer{padding:42px 0 60px;border-top:1px solid var(--line);background:#fff}
+    .footer-grid{display:flex;justify-content:space-between;gap:30px;align-items:flex-start}
+
+    /* ========================= RESPONSIVE ========================= */
+    @media (max-width: 960px){
+      .nav-links{display:none}
+      .hero{padding-top:50px;min-height:auto}
+      .hero-grid,.grid-2{grid-template-columns:1fr}
+      .grid-3{grid-template-columns:1fr 1fr}
+      .grid-4{grid-template-columns:1fr 1fr}
+      .hero-grid{gap:28px}
+      .triple{grid-template-columns:1fr}
+      .proof-ladder{grid-template-columns:1fr 1fr}
+      .proof-node::after{display:none}
+      .section{padding:72px 0}
+    }
+    @media (max-width: 640px){
+      .container{width:min(100% - 20px,var(--max))}
+      .nav{height:64px}.site-header{position:sticky}
+      .brand span:last-child{font-size:.9rem}
+      .nav-pill{display:none}
+      .hero{padding-top:34px}
+      .hero-copy h1{font-size:clamp(2.45rem,15vw,4.1rem)}
+      .hero-formula{left:20px;right:20px;bottom:20px;font-size:.75rem}
+      .visual-shell{border-radius:24px;padding:12px}
+      .section{padding:56px 0}
+      .section-title{display:block}.section-title .side{margin-top:12px}
+      .grid-3,.grid-4,.proof-ladder{grid-template-columns:1fr}
+      .card-pad{padding:18px}
+      .controls{align-items:stretch}.control{width:100%;min-width:0}
+      .btn{width:100%}.hero-actions .btn{width:auto;flex:1 1 170px}
+      .sim-toolbar{align-items:flex-start;flex-direction:column}
+      .plot{aspect-ratio:4/3}
+      .matrix-grid{max-width:none}
+      .footer-grid{flex-direction:column}
+    }
+
+    /* ========================= PRINT ========================= */
+    @media print{
+      .site-header,.hero-actions,.controls,.segmented,.btn,.debug,.mc-interactive,.owner-actions{display:none!important}
+      body{background:#fff;color:#000;font-size:10pt}
+      body::before{display:none}
+      .section,.hero{padding:18px 0;min-height:auto}
+      .container{width:100%}
+      .card,.visual-shell,.sim-panel{box-shadow:none;break-inside:avoid}
+      .hero-grid,.grid-2,.grid-3,.grid-4{grid-template-columns:1fr 1fr}
+      .plot{max-height:240px}
+      footer{padding:20px 0}
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="#top" aria-label="LII Lens Lab home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 16.5 8 11l4 3.5L20.5 6" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="3" cy="16.5" r="1.4" fill="white"/><circle cx="8" cy="11" r="1.4" fill="white"/><circle cx="12" cy="14.5" r="1.4" fill="white"/><circle cx="20.5" cy="6" r="1.4" fill="white"/></svg>
+        </span>
+        <span>LII Lens Lab</span>
+      </a>
+      <nav class="nav-links" aria-label="เมนูหลัก">
+        <a href="#lii">LII Builder</a><a href="#homography">Homography</a><a href="#bound">10ε Proof</a><a href="#montecarlo">Monte Carlo</a><a href="#results">18 Cases</a><a href="#owner">Owner Mode</a>
+      </nav>
+      <span class="nav-pill"><i class="status-dot"></i> Simulated 2D • PoC</span>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- ========================= HERO ========================= -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <div class="kicker">Applied Mathematics • Projective Geometry</div>
+          <h1>วัดระยะจากภาพเอียง<br><span class="soft">เชื่อได้แค่ไหน?</span></h1>
+          <p class="lead">สำรวจแบบจำลองโฮโมกราฟีสำหรับ Little’s Irregularity Index (LII): จากพิกัดต้นฉบับ → ภาพบิดเบี้ยว → แปลงกลับ → วิเคราะห์ขอบเขตความคลาดเคลื่อนอย่างเป็นระบบ</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#lii">เริ่มทดลอง <span aria-hidden="true">→</span></a>
+            <a class="btn btn-secondary" href="#bound">ดูบทพิสูจน์ 10ε</a>
+          </div>
+          <div class="hero-stats" aria-label="สรุปการทดลอง">
+            <div class="hero-stat"><strong>6 × 3</strong><span>ชุดพิกัด × Homography</span></div>
+            <div class="hero-stat"><strong>18</strong><span>เงื่อนไขหลัก</span></div>
+            <div class="hero-stat"><strong>18,000</strong><span>Monte Carlo trials ในรายงาน</span></div>
+          </div>
+        </div>
+        <div class="visual-shell" aria-label="ภาพแนวคิดโฮโมกราฟี">
+          <div class="visual-top"><div class="mini-dots"><i></i><i></i><i></i></div><span class="formula-badge">Q̃ ∼ H P̃</span></div>
+          <svg class="hero-svg" viewBox="0 0 640 480" role="img" aria-label="จุดหกจุดบนระนาบต้นฉบับและระนาบที่บิดเบี้ยว">
+            <defs><linearGradient id="planeFill" x1="0" x2="1"><stop offset="0" stop-color="#f8fbff"/><stop offset="1" stop-color="#edf4ff"/></linearGradient></defs>
+            <g opacity=".78" stroke="#dfe8f3" stroke-width="1">
+              <path d="M60 100H300M60 145H300M60 190H300M60 235H300M60 280H300M60 325H300M60 370H300"/>
+              <path d="M90 78V390M130 78V390M170 78V390M210 78V390M250 78V390"/>
+            </g>
+            <path d="M350 110 575 70 598 352 325 392Z" fill="url(#planeFill)" stroke="#cbd9ea" stroke-width="2"/>
+            <g opacity=".72" stroke="#d8e4f1" stroke-width="1"><path d="M346 154 579 117M342 201 583 167M338 248 588 220M333 297 592 277M329 345 596 333"/><path d="M382 104 357 388M426 96 405 380M470 88 454 371M515 80 503 362M558 73 552 355"/></g>
+            <polyline points="83,235 125,223 167,244 210,198 253,237 291,225" fill="none" stroke="#1957d8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <g fill="#fff" stroke="#1957d8" stroke-width="4"><circle cx="83" cy="235" r="7"/><circle cx="125" cy="223" r="7"/><circle cx="167" cy="244" r="7"/><circle cx="210" cy="198" r="7"/><circle cx="253" cy="237" r="7"/><circle cx="291" cy="225" r="7"/></g>
+            <polyline points="362,255 401,237 447,247 493,191 541,221 579,197" fill="none" stroke="#c4661b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <g fill="#fff" stroke="#c4661b" stroke-width="4"><circle cx="362" cy="255" r="7"/><circle cx="401" cy="237" r="7"/><circle cx="447" cy="247" r="7"/><circle cx="493" cy="191" r="7"/><circle cx="541" cy="221" r="7"/><circle cx="579" cy="197" r="7"/></g>
+            <path d="M290 132C326 110 342 110 369 128" fill="none" stroke="#7c91aa" stroke-width="2" stroke-dasharray="5 6"/>
+            <path d="m361 118 11 10-14 4" fill="none" stroke="#7c91aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="83" y="412" fill="#60758e" font-size="14" font-weight="700">REFERENCE PLANE</text><text x="400" y="412" fill="#60758e" font-size="14" font-weight="700">PROJECTIVE VIEW</text>
+          </svg>
+          <div class="hero-formula">LII = Σᵢ₌₁⁵ ‖Pᵢ₊₁ − Pᵢ‖</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= PERSPECTIVE HOOK ========================= -->
+    <section class="section compact">
+      <div class="container">
+        <div class="grid-3">
+          <article class="card card-pad"><span class="badge badge-blue">01 • Distort</span><h3 style="margin-top:14px">Homography ไม่รักษาระยะ</h3><p class="muted small">เส้นตรงยังเป็นเส้นตรงได้ แต่ Euclidean distance และมุมโดยทั่วไปเปลี่ยนได้</p></article>
+          <article class="card card-pad"><span class="badge badge-green">02 • Recover</span><h3 style="margin-top:14px">ใช้ H⁻¹ กลับสู่ระนาบอ้างอิง</h3><p class="muted small">เมื่อ H ไม่เอกฐานและทราบค่าอย่างถูกต้อง พิกัดต้นฉบับถูกกู้คืนได้ในกรณีอุดมคติ</p></article>
+          <article class="card card-pad"><span class="badge badge-amber">03 • Bound</span><h3 style="margin-top:14px">ควบคุม error ด้วย 10ε</h3><p class="muted small">หากจุดแต่ละจุดคลาดไม่เกิน ε บน reference plane ค่า LII จะคลาดไม่เกิน 10ε</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= LII BUILDER ========================= -->
+    <section class="section" id="lii">
+      <div class="container">
+        <div class="section-title">
+          <div><div class="eyebrow">Module 01</div><h2>LII Builder</h2><p class="lead">ลากจุดทั้ง 6 จุดแล้วดูว่า “ผลรวมระยะ 5 ช่วง” เปลี่ยนอย่างไรแบบ real time</p></div>
+          <div class="side">LII ในเว็บนี้ใช้เป็นโครงสร้างทางคณิตศาสตร์สำหรับศึกษาผลของ projective distortion ไม่ใช่เครื่องมือวินิจฉัย</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card card-pad">
+            <div class="card-head">
+              <div><h3>Interactive reference plane</h3><p>เลือกชุด S1–S6 หรือปรับจุดเอง</p></div>
+              <span id="builderDatasetBadge" class="badge badge-blue">S3</span>
+            </div>
+            <div class="controls" style="margin-bottom:14px">
+              <div class="control"><label for="datasetSelect">ชุดพิกัด</label><select id="datasetSelect" aria-label="เลือกชุดพิกัด"></select></div>
+              <button class="btn btn-secondary btn-sm" id="resetBuilder" type="button">Reset</button>
+              <button class="btn btn-ghost btn-sm" id="equationReader" type="button">อ่านสมการแบบภาษาง่าย</button>
+            </div>
+            <div class="sim-panel">
+              <div class="sim-toolbar"><strong>Reference coordinates</strong><span class="hint">ลากจุด P₁–P₆ ได้</span></div>
+              <svg id="builderPlot" class="plot" viewBox="0 0 720 405" role="img" aria-label="กราฟจุดพิกัดสำหรับคำนวณ LII"></svg>
+            </div>
+            <div id="equationExplain" class="note" hidden style="margin-top:14px"><strong>ภาษาง่าย:</strong> มี 6 จุด จึงเกิดระยะระหว่างจุดที่อยู่ติดกัน 5 ช่วง เราหาความยาวแต่ละช่วงด้วยสูตรระยะทางยูคลิด แล้วบวกทั้ง 5 ค่าเข้าด้วยกัน</div>
+          </div>
+
+          <div class="card card-pad">
+            <div class="card-head"><div><h3>Live calculation</h3><p>แก้ตัวเลขในตารางได้เช่นกัน</p></div></div>
+            <div class="formula big" aria-label="สูตร Little's Irregularity Index">LII = Σᵢ₌₁⁵ √[(xᵢ₊₁−xᵢ)² + (yᵢ₊₁−yᵢ)²]</div>
+            <div class="grid-3" style="margin:16px 0">
+              <div class="metric strong"><label>Live LII</label><div class="value" id="liveLii">—</div><div class="sub">คำนวณจากจุดปัจจุบัน</div></div>
+              <div class="metric"><label>Reference L₀</label><div class="value" id="refLii">—</div><div class="sub">ค่าจากชุดต้นฉบับ</div></div>
+              <div class="metric"><label>Δ from preset</label><div class="value" id="builderDelta">—</div><div class="sub">Absolute difference</div></div>
+            </div>
+            <div class="coord-table-wrap"><table><thead><tr><th>Point</th><th>x</th><th>y</th><th>segment to next</th></tr></thead><tbody id="coordBody"></tbody></table></div>
+            <p id="builderAnnounce" class="sr-only" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= HOMOGRAPHY ========================= -->
+    <section class="section" id="homography">
+      <div class="container">
+        <div class="section-title">
+          <div><div class="eyebrow">Module 02</div><h2>Homography Lab</h2><p class="lead">เปรียบเทียบพิกัดต้นฉบับ ภาพที่ถูกบิด และผลหลังใช้ H⁻¹</p></div>
+          <div class="side">Default demonstration: S3 + H2 ซึ่งเป็นกรณีตัวอย่างหลักในรายงาน</div>
+        </div>
+
+        <div class="card card-pad" style="margin-bottom:20px">
+          <div class="controls">
+            <div class="control"><label for="hDataset">Dataset</label><select id="hDataset"></select></div>
+            <div class="control"><label for="hMatrix">Homography</label><select id="hMatrix"><option value="H1">H1 — ต่ำ</option><option value="H2" selected>H2 — ปานกลาง</option><option value="H3">H3 — สูง</option></select></div>
+            <div class="control" style="min-width:220px"><label>หลักการ</label><div class="formula" style="padding:9px 12px">Q̃ ∼ H P̃ &nbsp; → &nbsp; P̃ ∼ H⁻¹ Q̃</div></div>
+          </div>
+        </div>
+
+        <div class="triple">
+          <div class="sim-panel"><div class="triple-title">01 • Original</div><svg id="originalPlot" class="plot" viewBox="0 0 520 390" aria-label="พิกัดต้นฉบับ"></svg></div>
+          <div class="sim-panel"><div class="triple-title">02 • Distorted</div><svg id="distortedPlot" class="plot" viewBox="0 0 520 390" aria-label="พิกัดหลังโฮโมกราฟี"></svg></div>
+          <div class="sim-panel"><div class="triple-title">03 • Recovered</div><svg id="recoveredPlot" class="plot" viewBox="0 0 520 390" aria-label="พิกัดหลังแปลงกลับ"></svg></div>
+        </div>
+
+        <div class="grid-4" style="margin-top:16px">
+          <div class="metric"><label>L₀</label><div class="value" id="hL0">—</div><div class="sub">reference plane</div></div>
+          <div class="metric strong"><label>Lraw</label><div class="value" id="hLraw">—</div><div class="sub">distorted coordinates</div></div>
+          <div class="metric"><label>Relative Error</label><div class="value" id="hRe">—</div><div class="sub">ก่อนแก้ distortion</div></div>
+          <div class="metric"><label>Lrec</label><div class="value" id="hLrec">—</div><div class="sub" id="hRecoveredError">recovered AE —</div></div>
+        </div>
+
+        <div class="grid-2" style="margin-top:20px">
+          <article class="card card-pad">
+            <div class="card-head"><div><h3>เมทริกซ์ที่กำลังใช้</h3><p id="matrixLevel">H2 • ระดับปานกลาง</p></div><span class="badge badge-blue" id="detBadge">det = —</span></div>
+            <div class="matrix-grid" id="matrixGrid" aria-label="เมทริกซ์โฮโมกราฟี"></div>
+          </article>
+          <article class="card card-pad">
+            <h3>ทำไม H⁻¹ จึงสำคัญ?</h3>
+            <div class="step-list">
+              <div class="step"><div class="step-num">H</div><div><strong>สร้าง projective distortion</strong><p>พิกัดเปลี่ยน และระยะ Euclidean ไม่จำเป็นต้องเท่าเดิม</p></div></div>
+              <div class="step"><div class="step-num">H⁻¹</div><div><strong>ย้อน mapping เดิม</strong><p>ในกรณีอุดมคติ H⁻¹H = I จึงกู้พิกัดต้นฉบับได้</p></div></div>
+              <div class="step"><div class="step-num">L</div><div><strong>คำนวณบน reference plane</strong><p>จึงค่อยหาผลรวมระยะทาง 5 ช่วงเพื่อได้ Lrec</p></div></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= ERROR BOUND ========================= -->
+    <section class="section" id="bound">
+      <div class="container">
+        <div class="section-title">
+          <div><div class="eyebrow">Module 03</div><h2>Error Bound Lab</h2><p class="lead">ทดลองกับข้อพิสูจน์หลักของโครงงาน: ถ้าแต่ละจุดคลาดไม่เกิน ε แล้ว LII จะคลาดไม่เกิน 10ε</p></div>
+          <div class="side"><strong>10ε เป็น upper bound</strong> ไม่ใช่ค่าความผิดพลาดที่คาดว่าจะเกิดทุกครั้ง และไม่ได้อ้างว่าเป็น tightest bound</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card card-pad">
+            <div class="controls" style="margin-bottom:14px">
+              <div class="control" style="flex:1"><label for="epsilonRange">ε = <span id="epsLabel">0.25</span> หน่วย</label><input id="epsilonRange" type="range" min="0.05" max="0.50" step="0.05" value="0.25" /></div>
+              <button id="randomPerturb" class="btn btn-blue btn-sm" type="button">สุ่มจุดในวง ε</button>
+              <button id="resetPerturb" class="btn btn-secondary btn-sm" type="button">Reset</button>
+            </div>
+            <div class="sim-panel"><div class="sim-toolbar"><strong>Reference vs perturbed points</strong><span class="hint">ลากจุดสีแดงได้ แต่จะถูกจำกัดให้อยู่ในวง ε</span></div><svg id="errorPlot" class="plot" viewBox="0 0 720 405" aria-label="กราฟขอบเขตความคลาดเคลื่อนของจุด"></svg></div>
+          </div>
+
+          <div class="card card-pad">
+            <div class="grid-3">
+              <div class="metric strong"><label>Actual E</label><div class="value" id="actualError">—</div><div class="sub">|L̂ − L₀|</div></div>
+              <div class="metric"><label>Theoretical bound</label><div class="value" id="theoryBound">—</div><div class="sub">10ε</div></div>
+              <div class="metric"><label>Status</label><div class="value" id="boundStatus">—</div><div class="sub" id="boundRatioText">—</div></div>
+            </div>
+            <div style="margin:18px 0 8px"><div class="bound-meter" aria-label="อัตราส่วน error เทียบกับขอบเขต"><span id="boundMeter"></span></div></div>
+            <div class="formula big">|L̂ − L₀| ≤ 10ε</div>
+            <div class="proof-ladder">
+              <div class="proof-node"><div class="math">‖P̂ᵢ−Pᵢ‖≤ε</div><small>หนึ่งจุด</small></div>
+              <div class="proof-node"><div class="math">|d̂ᵢ−dᵢ|≤2ε</div><small>หนึ่งช่วง</small></div>
+              <div class="proof-node"><div class="math">5 × 2ε</div><small>มี 5 ช่วง</small></div>
+              <div class="proof-node"><div class="math">≤ 10ε</div><small>upper bound</small></div>
+            </div>
+            <div class="note" style="margin-top:18px"><strong>เหตุผล:</strong> reverse triangle inequality ทำให้ error ของระยะหนึ่งช่วงไม่เกินผลรวมของ error ที่ปลายทั้งสองด้าน คือ 2ε แล้วรวม 5 ช่วงจึงได้ 10ε</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= MONTE CARLO ========================= -->
+    <section class="section" id="montecarlo">
+      <div class="container">
+        <div class="section-title">
+          <div><div class="eyebrow">Module 04</div><h2>Monte Carlo Lab</h2><p class="lead">สุ่ม error ของแต่ละจุดในวงรัศมี ε แล้วดู distribution ของ |L̂ − L₀|</p></div>
+          <div class="side">รายงานกำหนด seed = 20260617 แต่ไม่ได้ระบุ PRNG เดิมครบ เว็บนี้จึงแยก “Browser Experiment” ออกจาก “Published Results” ชัดเจน</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card card-pad mc-interactive">
+            <div class="controls">
+              <div class="control"><label for="mcDataset">Dataset</label><select id="mcDataset"></select></div>
+              <div class="control"><label for="mcEpsilon">ε</label><select id="mcEpsilon"><option value="0.10">0.10</option><option value="0.25" selected>0.25</option><option value="0.50">0.50</option></select></div>
+              <div class="control"><label for="mcTrials">Trials</label><select id="mcTrials"><option>100</option><option selected>1000</option><option>5000</option><option>18000</option></select></div>
+              <div class="control"><label for="mcSeed">Seed</label><input id="mcSeed" type="number" value="20260617" step="1" /></div>
+              <button id="runMC" class="btn btn-blue btn-sm" type="button">Run simulation</button>
+            </div>
+            <div style="margin-top:14px" class="progress-track" aria-hidden="true"><span id="mcProgress"></span></div>
+            <div class="canvas-wrap" style="margin-top:14px"><canvas id="mcCanvas" width="900" height="300" aria-label="ฮิสโตแกรมผล Monte Carlo"></canvas></div>
+          </div>
+
+          <div class="card card-pad">
+            <div class="card-head"><div><h3>Browser Experiment</h3><p id="mcMeta">ยังไม่ได้รัน</p></div><span id="mcPassBadge" class="badge badge-blue">Ready</span></div>
+            <div class="grid-3">
+              <div class="metric"><label>Mean</label><div id="mcMean" class="value">—</div></div>
+              <div class="metric"><label>SD</label><div id="mcSD" class="value">—</div></div>
+              <div class="metric"><label>P95</label><div id="mcP95" class="value">—</div></div>
+              <div class="metric"><label>Max</label><div id="mcMax" class="value">—</div></div>
+              <div class="metric"><label>Bound</label><div id="mcBound" class="value">—</div></div>
+              <div class="metric strong"><label>Pass rate</label><div id="mcPass" class="value">—</div></div>
+            </div>
+            <div class="rule"></div>
+            <h3>Published aggregate</h3>
+            <table><thead><tr><th>ε</th><th>Mean error</th><th>Report status</th></tr></thead><tbody><tr><td class="num">0.10</td><td class="num">0.092660</td><td><span class="badge badge-green">≤ 10ε</span></td></tr><tr><td class="num">0.25</td><td class="num">0.236248</td><td><span class="badge badge-green">≤ 10ε</span></td></tr><tr><td class="num">0.50</td><td class="num">0.506325</td><td><span class="badge badge-green">≤ 10ε</span></td></tr></tbody></table>
+            <div class="note" style="margin-top:14px"><strong>Simulation ≠ proof.</strong> Monte Carlo สนับสนุนความสอดคล้องเชิงคำนวณ แต่สิ่งที่รับประกันขอบเขต 10ε คือบทพิสูจน์</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= RESULTS ========================= -->
+    <section class="section" id="results">
+      <div class="container">
+        <div class="section-title">
+          <div><div class="eyebrow">Module 05</div><h2>Reproduce 18 Conditions</h2><p class="lead">คำนวณ S1–S6 × H1–H3 ใน browser แล้วเทียบกับค่าที่รายงานไว้</p></div>
+          <div class="side">เป้าหมายไม่ใช่แค่โชว์ตัวเลข แต่ให้ตรวจสอบย้อนกลับได้ว่า calculation pipeline ทำงานจริง</div>
+        </div>
+        <div class="card card-pad">
+          <div class="grid-4" style="margin-bottom:18px">
+            <div class="metric"><label>Mean RE • H1</label><div class="value">0.8780%</div></div>
+            <div class="metric"><label>Mean RE • H2</label><div class="value">3.1170%</div></div>
+            <div class="metric"><label>Mean RE • H3</label><div class="value">10.6177%</div></div>
+            <div class="metric strong"><label>Maximum RE</label><div class="value">17.2956%</div></div>
+          </div>
+          <div class="coord-table-wrap" style="max-height:520px"><table class="result-table"><thead><tr><th>Case</th><th>L₀</th><th>Calculated Lraw</th><th>Published Lraw</th><th>RE</th><th>Lrec</th><th>Δ publish</th></tr></thead><tbody id="resultsBody"></tbody></table></div>
+          <div class="note" style="margin-top:14px"><strong>Expected:</strong> Lraw ต่างจาก L₀ ทั้ง 18 เงื่อนไข ขณะที่ Lrec กลับสู่ค่าเดิมภายใน floating-point precision เมื่อใช้ inverse matrix ที่ถูกต้อง</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= OWNER MODE ========================= -->
+    <section class="section" id="owner">
+      <div class="container">
+        <div class="section-title">
+          <div><div class="eyebrow">Module 06</div><h2>Owner Mode</h2><p class="lead">เช็กว่าคุณสามารถอธิบายแก่นของโครงงานได้ โดยไม่หลุดขอบเขตของ Mathematical Proof of Concept</p></div>
+          <div class="owner-progress" id="ownerDots" aria-label="ความก้าวหน้า Owner Mode"><i></i><i></i><i></i></div>
+        </div>
+
+        <div class="grid-3">
+          <article class="question-card" data-owner="0">
+            <span class="badge badge-blue">Challenge 1</span><h3 style="margin-top:12px">ทำไม Lraw จึงเปลี่ยน?</h3><p class="small muted">เลือกคำอธิบายที่ถูกต้องที่สุด</p>
+            <div class="answer-options"><button data-correct="false">เพราะ Homography ทำให้จำนวนจุดเพิ่มขึ้น</button><button data-correct="true">เพราะ Homography โดยทั่วไปไม่รักษา Euclidean distance</button><button data-correct="false">เพราะ LII ต้องคำนวณจากภาพ 3 มิติเท่านั้น</button></div>
+          </article>
+          <article class="question-card" data-owner="1">
+            <span class="badge badge-amber">Challenge 2</span><h3 style="margin-top:12px">10ε หมายความว่าอะไร?</h3><p class="small muted">เลือกประโยคที่ปลอดภัยเชิงวิชาการ</p>
+            <div class="answer-options"><button data-correct="false">ทุกครั้ง error จะเท่ากับ 10ε พอดี</button><button data-correct="false">10ε คือ error ใน pixel ของภาพถ่ายโดยตรง</button><button data-correct="true">เป็น upper bound ภายใต้เงื่อนไขว่าจุดบน reference plane คลาดไม่เกิน ε</button></div>
+          </article>
+          <article class="question-card" data-owner="2">
+            <span class="badge badge-red">Challenge 3</span><h3 style="margin-top:12px">ประโยคใด “กล่าวเกินหลักฐาน”?</h3><p class="small muted">Overclaim detector</p>
+            <div class="answer-options"><button data-correct="false">แบบจำลองแสดง internal consistency บน simulated 2D data</button><button data-correct="true">ระบบนี้ยืนยันความแม่นยำทางคลินิกสำหรับภาพฟันจริงแล้ว</button><button data-correct="false">การใช้ H⁻¹ ที่ถูกต้องกู้คืนค่าในกรณีอุดมคติได้ภายใน floating-point precision</button></div>
+          </article>
+        </div>
+
+        <div class="card card-pad" style="margin-top:20px">
+          <div class="card-head"><div><h3>60-second explanation scaffold</h3><p>โครงเรื่องสั้นสำหรับอธิบายต่อกรรมการ</p></div><button id="printSummary" class="btn btn-secondary btn-sm owner-actions" type="button">Print summary</button></div>
+          <div class="step-list">
+            <div class="step"><div class="step-num">1</div><div><strong>Problem</strong><p>Homography ไม่รักษา Euclidean distance → LII บน distorted coordinates เปลี่ยนได้</p></div></div>
+            <div class="step"><div class="step-num">2</div><div><strong>Model</strong><p>ใช้ 6 coordinate sets × 3 homographies = 18 controlled conditions</p></div></div>
+            <div class="step"><div class="step-num">3</div><div><strong>Recovery</strong><p>ใช้ H⁻¹ map กลับสู่ reference plane ก่อนคำนวณ LII</p></div></div>
+            <div class="step"><div class="step-num">4</div><div><strong>Proof</strong><p>หากจุดแต่ละจุดคลาด ≤ ε → segment error ≤ 2ε → 5 segments → |L̂−L₀| ≤ 10ε</p></div></div>
+            <div class="step"><div class="step-num">5</div><div><strong>Scope</strong><p>ผลเป็น Mathematical Proof of Concept จาก simulated 2D data ไม่ใช่ clinical validation</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= LIMITATIONS ========================= -->
+    <section class="section" id="limitations">
+      <div class="container">
+        <div class="grid-2">
+          <div><div class="eyebrow">Scientific guardrails</div><h2>ขอบเขตที่ต้องพูดให้ชัด</h2><p class="lead">เว็บไซต์ตั้งใจทำให้สิ่งที่ “พิสูจน์ได้” และสิ่งที่ “ยังไม่ได้ศึกษา” แยกจากกันอย่างชัดเจน</p></div>
+          <div class="card card-pad">
+            <div class="limitation"><div class="lim-icon">2D</div><div><strong>Simulated 2D only</strong><div class="muted small">ไม่ใช่ข้อสรุปแทนโครงสร้างฟัน 3 มิติ และไม่ครอบคลุม parallax ทั่วไป</div></div></div>
+            <div class="limitation"><div class="lim-icon">H</div><div><strong>Assume known homography</strong><div class="muted small">ไม่ได้รวม error จากการ estimate H จากภาพจริงหรือจุดอ้างอิงจริง</div></div></div>
+            <div class="limitation"><div class="lim-icon">L</div><div><strong>No lens distortion model</strong><div class="muted small">ไม่ได้รวม radial/tangential lens distortion ในแบบจำลองนี้</div></div></div>
+            <div class="limitation"><div class="lim-icon">✚</div><div><strong>Not a diagnostic tool</strong><div class="muted small">ไม่มีการอ้างความแม่นยำทางคลินิกหรือความพร้อมใช้กับผู้ป่วย</div></div></div>
+            <div class="limitation"><div class="lim-icon">ε</div><div><strong>10ε belongs to reference plane</strong><div class="muted small">ขอบเขตนี้ใช้กับตำแหน่งจุดที่คลาดบนระนาบมาตรฐาน ไม่ใช่ pixel error โดยตรง</div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="debugPanel" class="debug" aria-live="polite"></div>
+  </main>
+
+  <footer>
+    <div class="container footer-grid">
+      <div><strong>LII Lens Lab</strong><p class="muted small" style="max-width:650px;margin-top:8px">Interactive mathematical proof of concept for a homography-based model and error-bound analysis of Little’s Irregularity Index from simulated images.</p></div>
+      <div class="tiny muted">Static single-file webapp • No external runtime libraries<br>Designed for reproducibility, learning, and presentation</div>
+    </div>
+  </footer>
+
+  <script>
+  (() => {
+    'use strict';
+
+    // ========================= SOURCE DATA =========================
+    const DATASETS = {
+      S1: [[0,0],[1.2,0.08],[2.4,-0.05],[3.6,0.06],[4.8,-0.07],[6,0]],
+      S2: [[0,0],[1.2,0.25],[2.4,-0.18],[3.6,0.2],[4.8,-0.22],[6,0.05]],
+      S3: [[0,0],[1.2,0.1],[2.35,0.65],[3.65,-0.55],[4.8,-0.1],[6,0]],
+      S4: [[0,0],[1.15,0.55],[2.45,-0.6],[3.55,0.7],[4.85,-0.5],[6,0.15]],
+      S5: [[0,0.1],[1.25,0.7],[2.3,0.3],[3.7,-0.65],[4.75,-0.2],[6,0.05]],
+      S6: [[0,0],[1.1,0.95],[2.55,-0.8],[3.45,1.1],[4.95,-0.75],[6,0.25]]
+    };
+    const DATASET_LABELS = {
+      S1:'เกือบเป็นแนวตรง', S2:'เบี่ยงเบนเล็กน้อยแบบสลับทิศ', S3:'จุดกึ่งกลางเบี่ยงเบนเด่นชัด',
+      S4:'เบี่ยงเบนสลับหลายตำแหน่ง', S5:'เบี่ยงเบนแบบไม่สมมาตร', S6:'เบี่ยงเบนระดับมาก'
+    };
+    const REFERENCE_LII = {S1:6.023777,S2:6.260587,S3:6.687163,S4:7.803514,S5:6.619166,S6:9.660188};
+    const HOMOGRAPHIES = {
+      H1:[[1.02,0.03,0.5],[0.01,0.98,0.3],[0.0008,0.0005,1]],
+      H2:[[1.08,0.12,1],[-0.05,0.95,0.8],[0.004,0.002,1]],
+      H3:[[0.9,0.3,1.5],[-0.18,1.08,1],[0.015,-0.008,1]]
+    };
+    const H_LEVELS={H1:'ระดับต่ำ',H2:'ระดับปานกลาง',H3:'ระดับสูง'};
+    const DET_TARGET={H1:0.99876470,H2:1.02675600,H3:1.01556000};
+    const PUBLISHED = {
+      'S1-H1':{raw:6.1111,re:1.4489,rec:6.023777},'S1-H2':{raw:6.3325,re:5.1248,rec:6.023777},'S1-H3':{raw:4.9819,re:17.2956,rec:6.023777},
+      'S2-H1':{raw:6.3368,re:1.2171,rec:6.260587},'S2-H2':{raw:6.5371,re:4.4164,rec:6.260587},'S2-H3':{raw:5.3199,re:15.0263,rec:6.260587},
+      'S3-H1':{raw:6.7488,re:0.9220,rec:6.687163},'S3-H2':{raw:6.9179,re:3.4507,rec:6.687163},'S3-H3':{raw:5.8903,re:11.9170,rec:6.687163},
+      'S4-H1':{raw:7.8090,re:0.0701,rec:7.803514},'S4-H2':{raw:7.8864,re:1.0626,rec:7.803514},'S4-H3':{raw:7.3246,re:6.1375,rec:7.803514},
+      'S5-H1':{raw:6.6752,re:0.8465,rec:6.619166},'S5-H2':{raw:6.8422,re:3.3701,rec:6.619166},'S5-H3':{raw:5.8038,re:12.3180,rec:6.619166},
+      'S6-H1':{raw:9.5864,re:0.7635,rec:9.660188},'S6-H2':{raw:9.5368,re:1.2774,rec:9.660188},'S6-H3':{raw:9.5625,re:1.0118,rec:9.660188}
+    };
+
+    // ========================= MATH =========================
+    const clonePoints = pts => pts.map(p => [p[0],p[1]]);
+    const distance = (a,b) => Math.hypot(b[0]-a[0], b[1]-a[1]);
+    const lii = pts => pts.slice(0,-1).reduce((s,p,i)=>s+distance(p,pts[i+1]),0);
+    const ae = (a,b) => Math.abs(a-b);
+    const re = (estimate, truth) => truth === 0 ? 0 : Math.abs(estimate-truth)/Math.abs(truth)*100;
+    const fmt = (v,d=6) => Number.isFinite(v) ? v.toFixed(d) : '—';
+    const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
+    function determinant3(m){return m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])-m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])+m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);}
+    function inverse3(m){
+      const d=determinant3(m); if(Math.abs(d)<1e-14) throw new Error('Singular matrix');
+      const a=m[0][0],b=m[0][1],c=m[0][2],d1=m[1][0],e=m[1][1],f=m[1][2],g=m[2][0],h=m[2][1],i=m[2][2];
+      return [[(e*i-f*h),(c*h-b*i),(b*f-c*e)],[(f*g-d1*i),(a*i-c*g),(c*d1-a*f)],[(d1*h-e*g),(b*g-a*h),(a*e-b*d1)]].map(r=>r.map(v=>v/d));
+    }
+    function applyHomography(p,m){const x=p[0],y=p[1];const u=m[0][0]*x+m[0][1]*y+m[0][2];const v=m[1][0]*x+m[1][1]*y+m[1][2];const w=m[2][0]*x+m[2][1]*y+m[2][2];return [u/w,v/w];}
+    const transformPoints=(pts,m)=>pts.map(p=>applyHomography(p,m));
+
+    // ========================= DOM HELPERS =========================
+    const $ = s => document.querySelector(s);
+    const $$ = s => Array.from(document.querySelectorAll(s));
+    function populateDatasetSelect(el, selected='S3'){
+      el.innerHTML = Object.keys(DATASETS).map(k=>`<option value="${k}" ${k===selected?'selected':''}>${k} — ${DATASET_LABELS[k]}</option>`).join('');
+    }
+    ['datasetSelect','hDataset','mcDataset'].forEach((id,i)=>populateDatasetSelect(document.getElementById(id), i===0?'S3':'S3'));
+
+    // ========================= SVG RENDERER =========================
+    function boundsFor(sets, pad=.55){
+      const all=sets.flat(); let xs=all.map(p=>p[0]), ys=all.map(p=>p[1]);
+      let minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+      let dx=Math.max(.5,maxX-minX), dy=Math.max(.5,maxY-minY);
+      return {minX:minX-dx*pad,maxX:maxX+dx*pad,minY:minY-dy*pad,maxY:maxY+dy*pad};
+    }
+    function svgMap(viewBox,b){
+      const [vx,vy,vw,vh]=viewBox; const m=42;
+      const sx=(vw-2*m)/(b.maxX-b.minX), sy=(vh-2*m)/(b.maxY-b.minY);
+      const scale=Math.min(sx,sy); const w=(b.maxX-b.minX)*scale,h=(b.maxY-b.minY)*scale;
+      const ox=vx+(vw-w)/2, oy=vy+(vh-h)/2;
+      return {
+        toSvg:p=>[ox+(p[0]-b.minX)*scale, oy+h-(p[1]-b.minY)*scale],
+        toData:q=>[b.minX+(q[0]-ox)/scale, b.minY+(oy+h-q[1])/scale], scale, ox,oy,w,h
+      };
+    }
+    function renderPlot(svg, series, opts={}){
+      const vb=svg.viewBox.baseVal; const view=[vb.x,vb.y,vb.width,vb.height];
+      const sets=series.map(s=>s.points); const b=opts.bounds||boundsFor(sets, opts.pad??.35); const map=svgMap(view,b);
+      svg.innerHTML='';
+      const NS='http://www.w3.org/2000/svg';
+      const mk=(tag,attrs={})=>{const n=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>n.setAttribute(k,v));return n;};
+      const grid=mk('g',{class:'plot-grid'}); const steps=6;
+      for(let i=0;i<=steps;i++){let x=map.ox+map.w*i/steps;grid.appendChild(mk('line',{x1:x,y1:map.oy,x2:x,y2:map.oy+map.h}));let y=map.oy+map.h*i/steps;grid.appendChild(mk('line',{x1:map.ox,y1:y,x2:map.ox+map.w,y2:y}));} svg.appendChild(grid);
+      series.forEach((s,si)=>{
+        const pts=s.points.map(map.toSvg); const pl=mk('polyline',{points:pts.map(p=>p.join(',')).join(' '),class:`plot-poly ${s.className||''}`});svg.appendChild(pl);
+        pts.forEach((p,idx)=>{
+          const c=mk('circle',{cx:p[0],cy:p[1],r:s.radius||6,class:`plot-point ${s.className||''}`,'data-series':si,'data-index':idx,tabindex:s.draggable?'0':'-1',role:s.draggable?'slider':'img','aria-label':`${s.labelPrefix||'P'}${idx+1}`}); svg.appendChild(c);
+          if(opts.labels!==false){const t=mk('text',{x:p[0]+9,y:p[1]-9,class:'point-label'});t.textContent=`${s.labelPrefix||'P'}${idx+1}`;svg.appendChild(t);}
+        });
+      });
+      return {map,b};
+    }
+
+    // ========================= LII BUILDER =========================
+    let builderDataset='S3'; let builderPoints=clonePoints(DATASETS.S3); let builderMap=null;
+    function updateBuilder(){
+      const svg=$('#builderPlot'); builderMap=renderPlot(svg,[{points:builderPoints,draggable:true,labelPrefix:'P'}],{pad:.25});
+      const current=lii(builderPoints), ref=REFERENCE_LII[builderDataset];
+      $('#liveLii').textContent=fmt(current); $('#refLii').textContent=fmt(ref); $('#builderDelta').textContent=fmt(Math.abs(current-ref)); $('#builderDatasetBadge').textContent=builderDataset;
+      const body=$('#coordBody'); body.innerHTML='';
+      builderPoints.forEach((p,i)=>{
+        const tr=document.createElement('tr'); const seg=i<5?distance(p,builderPoints[i+1]):null;
+        tr.innerHTML=`<td><strong>P${i+1}</strong></td><td><input class="coord-input" data-axis="0" data-index="${i}" type="number" step="0.01" value="${p[0].toFixed(2)}" aria-label="P${i+1} x"></td><td><input class="coord-input" data-axis="1" data-index="${i}" type="number" step="0.01" value="${p[1].toFixed(2)}" aria-label="P${i+1} y"></td><td class="num">${seg===null?'—':fmt(seg,4)}</td>`; body.appendChild(tr);
+      });
+      $$('.coord-input').forEach(inp=>inp.addEventListener('change',e=>{const i=+e.target.dataset.index,a=+e.target.dataset.axis,v=+e.target.value;if(Number.isFinite(v)){builderPoints[i][a]=v;updateBuilder();}}));
+    }
+    $('#datasetSelect').addEventListener('change',e=>{builderDataset=e.target.value;builderPoints=clonePoints(DATASETS[builderDataset]);updateBuilder();});
+    $('#resetBuilder').addEventListener('click',()=>{builderPoints=clonePoints(DATASETS[builderDataset]);updateBuilder();});
+    $('#equationReader').addEventListener('click',()=>{const x=$('#equationExplain');x.hidden=!x.hidden;});
+    function attachDrag(svg, pointGetter, pointSetter, mapGetter, constrain){
+      let drag=null;
+      svg.addEventListener('pointerdown',e=>{const t=e.target.closest('circle[data-index]');if(!t)return;drag={index:+t.dataset.index,pointer:e.pointerId};t.setPointerCapture(e.pointerId);e.preventDefault();});
+      svg.addEventListener('pointermove',e=>{if(!drag||drag.pointer!==e.pointerId)return;const r=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal;const x=(e.clientX-r.left)/r.width*vb.width+vb.x,y=(e.clientY-r.top)/r.height*vb.height+vb.y;let p=mapGetter().toData([x,y]);if(constrain)p=constrain(drag.index,p);pointSetter(drag.index,p);});
+      const end=e=>{if(drag&&drag.pointer===e.pointerId)drag=null;};svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);
+    }
+    attachDrag($('#builderPlot'),()=>builderPoints,(i,p)=>{builderPoints[i]=p;updateBuilder();$('#builderAnnounce').textContent=`P${i+1} เปลี่ยนตำแหน่ง ค่า LII ${fmt(lii(builderPoints),4)}`;},()=>builderMap);
+
+    // ========================= HOMOGRAPHY LAB =========================
+    let hDataset='S3',hKey='H2';
+    function updateHomography(){
+      const pts=DATASETS[hDataset], H=HOMOGRAPHIES[hKey], dist=transformPoints(pts,H), inv=inverse3(H), rec=transformPoints(dist,inv);
+      const common=boundsFor([pts,dist,rec],.22);
+      renderPlot($('#originalPlot'),[{points:pts,labelPrefix:'P'}],{bounds:common});
+      renderPlot($('#distortedPlot'),[{points:dist,labelPrefix:'Q',className:'raw'}],{bounds:common});
+      renderPlot($('#recoveredPlot'),[{points:rec,labelPrefix:'P̂',className:'recovered'}],{bounds:common});
+      const L0=lii(pts),Lraw=lii(dist),Lrec=lii(rec);
+      $('#hL0').textContent=fmt(L0);$('#hLraw').textContent=fmt(Lraw);$('#hRe').textContent=fmt(re(Lraw,L0),4)+'%';$('#hLrec').textContent=fmt(Lrec);$('#hRecoveredError').textContent=`recovered AE ${ae(Lrec,L0).toExponential(2)}`;
+      $('#matrixLevel').textContent=`${hKey} • ${H_LEVELS[hKey]}`;$('#detBadge').textContent=`det = ${determinant3(H).toFixed(8)}`;
+      $('#matrixGrid').innerHTML=H.flat().map(v=>`<span>${v.toFixed(4)}</span>`).join('');
+    }
+    $('#hDataset').addEventListener('change',e=>{hDataset=e.target.value;updateHomography();}); $('#hMatrix').addEventListener('change',e=>{hKey=e.target.value;updateHomography();});
+
+    // ========================= ERROR BOUND LAB =========================
+    let eps=.25; const errorBase=clonePoints(DATASETS.S3); let perturbed=clonePoints(errorBase); let errorMap=null;
+    function randomInDisk(radius,rng=Math.random){const a=rng()*Math.PI*2,r=Math.sqrt(rng())*radius;return [Math.cos(a)*r,Math.sin(a)*r];}
+    function renderErrorPlot(){
+      const svg=$('#errorPlot'), vb=svg.viewBox.baseVal, view=[vb.x,vb.y,vb.width,vb.height]; const b=boundsFor([errorBase,perturbed],.35); const map=svgMap(view,b);errorMap=map;svg.innerHTML='';const NS='http://www.w3.org/2000/svg';const mk=(tag,attrs={})=>{const n=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>n.setAttribute(k,v));return n;};
+      const grid=mk('g',{class:'plot-grid'});for(let i=0;i<=6;i++){let x=map.ox+map.w*i/6;grid.appendChild(mk('line',{x1:x,y1:map.oy,x2:x,y2:map.oy+map.h}));let y=map.oy+map.h*i/6;grid.appendChild(mk('line',{x1:map.ox,y1:y,x2:map.ox+map.w,y2:y}));}svg.appendChild(grid);
+      errorBase.forEach((p,i)=>{const sp=map.toSvg(p),pp=map.toSvg(perturbed[i]);svg.appendChild(mk('circle',{cx:sp[0],cy:sp[1],r:eps*map.scale,class:'eps-circle'}));svg.appendChild(mk('line',{x1:sp[0],y1:sp[1],x2:pp[0],y2:pp[1],class:'pert-line'}));});
+      const p1=errorBase.map(map.toSvg),p2=perturbed.map(map.toSvg);svg.appendChild(mk('polyline',{points:p1.map(p=>p.join(',')).join(' '),class:'plot-poly'}));svg.appendChild(mk('polyline',{points:p2.map(p=>p.join(',')).join(' '),class:'plot-poly raw'}));
+      p1.forEach((p,i)=>svg.appendChild(mk('circle',{cx:p[0],cy:p[1],r:5,class:'plot-point'})));
+      p2.forEach((p,i)=>{svg.appendChild(mk('circle',{cx:p[0],cy:p[1],r:7,class:'pert-point','data-index':i,tabindex:0,role:'slider','aria-label':`จุดคลาดเคลื่อน P${i+1}`}));const t=mk('text',{x:p[0]+9,y:p[1]-8,class:'point-label'});t.textContent=`P̂${i+1}`;svg.appendChild(t);});
+      updateBoundMetrics();
+    }
+    function updateBoundMetrics(){const E=Math.abs(lii(perturbed)-lii(errorBase)),B=10*eps,ratio=B?E/B:0;$('#actualError').textContent=fmt(E);$('#theoryBound').textContent=fmt(B,2);$('#boundStatus').textContent=E<=B+1e-12?'PASS':'CHECK';$('#boundStatus').className='value '+(E<=B+1e-12?'success':'danger');$('#boundRatioText').textContent=`ใช้ ${fmt(ratio*100,1)}% ของ upper bound`;$('#boundMeter').style.width=`${clamp(ratio*100,0,100)}%`;}
+    $('#epsilonRange').addEventListener('input',e=>{eps=+e.target.value;$('#epsLabel').textContent=eps.toFixed(2);perturbed=perturbed.map((p,i)=>{let dx=p[0]-errorBase[i][0],dy=p[1]-errorBase[i][1],r=Math.hypot(dx,dy);if(r>eps){dx*=eps/r;dy*=eps/r;}return [errorBase[i][0]+dx,errorBase[i][1]+dy];});renderErrorPlot();});
+    $('#randomPerturb').addEventListener('click',()=>{perturbed=errorBase.map(p=>{const d=randomInDisk(eps);return[p[0]+d[0],p[1]+d[1]]});renderErrorPlot();});$('#resetPerturb').addEventListener('click',()=>{perturbed=clonePoints(errorBase);renderErrorPlot();});
+    attachDrag($('#errorPlot'),()=>perturbed,(i,p)=>{perturbed[i]=p;renderErrorPlot();},()=>errorMap,(i,p)=>{const b=errorBase[i],dx=p[0]-b[0],dy=p[1]-b[1],r=Math.hypot(dx,dy);if(r<=eps)return p;return[b[0]+dx/r*eps,b[1]+dy/r*eps];});
+
+    // ========================= MONTE CARLO =========================
+    function mulberry32(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;}}
+    function percentile(sorted,p){if(!sorted.length)return 0;const idx=(sorted.length-1)*p,lo=Math.floor(idx),hi=Math.ceil(idx),f=idx-lo;return sorted[lo]*(1-f)+sorted[hi]*f;}
+    function stats(vals){const n=vals.length,mean=vals.reduce((a,b)=>a+b,0)/n,sd=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/Math.max(1,n-1));const s=[...vals].sort((a,b)=>a-b);return{mean,sd,p95:percentile(s,.95),max:s[s.length-1]||0};}
+    function drawHistogram(vals,bound){const c=$('#mcCanvas'),ctx=c.getContext('2d');const W=c.width,H=c.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#fbfdff';ctx.fillRect(0,0,W,H);if(!vals.length){ctx.fillStyle='#6b7c90';ctx.font='16px system-ui';ctx.fillText('Run simulation to see distribution',26,42);return;}const max=Math.max(...vals,bound*.15,1e-9),bins=30,counts=Array(bins).fill(0);vals.forEach(v=>counts[Math.min(bins-1,Math.floor(v/max*bins))]++);const peak=Math.max(...counts);const m={l:48,r:22,t:18,b:36};ctx.strokeStyle='#dfe7f0';ctx.lineWidth=1;for(let i=0;i<=4;i++){const y=m.t+(H-m.t-m.b)*i/4;ctx.beginPath();ctx.moveTo(m.l,y);ctx.lineTo(W-m.r,y);ctx.stroke();}const bw=(W-m.l-m.r)/bins;counts.forEach((n,i)=>{const h=(H-m.t-m.b)*n/peak;ctx.fillStyle='#2f7af8';ctx.fillRect(m.l+i*bw+1,H-m.b-h,Math.max(1,bw-2),h);});ctx.fillStyle='#62758b';ctx.font='12px system-ui';ctx.fillText('0',m.l,H-12);ctx.fillText(max.toFixed(3),W-m.r-44,H-12);ctx.fillText('|L̂ − L₀|',W/2-28,H-12);}
+    let mcRunning=false;
+    $('#runMC').addEventListener('click',async()=>{if(mcRunning)return;mcRunning=true;$('#runMC').textContent='Running…';const ds=$('#mcDataset').value,e=+$('#mcEpsilon').value,N=+$('#mcTrials').value,seed=+$('#mcSeed').value||1,base=DATASETS[ds],L0=lii(base),rng=mulberry32(seed),vals=[];let pass=0;const B=10*e,batch=500;$('#mcPassBadge').className='badge badge-blue';$('#mcPassBadge').textContent='Running';
+      for(let start=0;start<N;start+=batch){const end=Math.min(N,start+batch);for(let k=start;k<end;k++){const q=base.map(p=>{const d=randomInDisk(e,rng);return[p[0]+d[0],p[1]+d[1]]});const er=Math.abs(lii(q)-L0);vals.push(er);if(er<=B+1e-12)pass++;}$('#mcProgress').style.width=`${end/N*100}%`;await new Promise(r=>setTimeout(r,0));}
+      const s=stats(vals);$('#mcMean').textContent=fmt(s.mean);$('#mcSD').textContent=fmt(s.sd);$('#mcP95').textContent=fmt(s.p95);$('#mcMax').textContent=fmt(s.max);$('#mcBound').textContent=fmt(B,2);$('#mcPass').textContent=fmt(pass/N*100,2)+'%';$('#mcMeta').textContent=`${ds} • ε=${e.toFixed(2)} • ${N.toLocaleString()} trials • seed ${seed}`;$('#mcPassBadge').textContent=pass===N?'All within bound':'Review';$('#mcPassBadge').className='badge '+(pass===N?'badge-green':'badge-amber');drawHistogram(vals,B);mcRunning=false;$('#runMC').textContent='Run simulation';
+    });
+
+    // ========================= REPRODUCTION =========================
+    function renderResults(){const body=$('#resultsBody');body.innerHTML='';Object.keys(DATASETS).forEach(ds=>Object.keys(HOMOGRAPHIES).forEach(h=>{const L0=lii(DATASETS[ds]),raw=lii(transformPoints(DATASETS[ds],HOMOGRAPHIES[h])),rec=lii(transformPoints(transformPoints(DATASETS[ds],HOMOGRAPHIES[h]),inverse3(HOMOGRAPHIES[h]))),pub=PUBLISHED[`${ds}-${h}`],diff=Math.abs(raw-pub.raw);const tr=document.createElement('tr');tr.innerHTML=`<td><strong>${ds} + ${h}</strong></td><td class="num">${fmt(L0,6)}</td><td class="num">${fmt(raw,4)}</td><td class="num">${pub.raw.toFixed(4)}</td><td class="num">${fmt(re(raw,L0),4)}%</td><td class="num">${fmt(rec,6)}</td><td class="num ${diff<5e-5?'match':'warn'}">${diff.toExponential(1)}</td>`;body.appendChild(tr);}));}
+
+    // ========================= OWNER MODE =========================
+    let ownerState=[false,false,false];
+    try{const saved=JSON.parse(localStorage.getItem('liiOwnerProgress')||'null');if(Array.isArray(saved)&&saved.length===3)ownerState=saved.map(Boolean);}catch(e){}
+    function updateOwner(){const dots=$$('#ownerDots i');ownerState.forEach((v,i)=>dots[i].classList.toggle('done',v));try{localStorage.setItem('liiOwnerProgress',JSON.stringify(ownerState));}catch(e){}}
+    $$('.question-card').forEach(card=>{const idx=+card.dataset.owner;card.querySelectorAll('button[data-correct]').forEach(btn=>btn.addEventListener('click',()=>{card.querySelectorAll('button').forEach(b=>{b.classList.remove('correct','wrong');b.disabled=false;});const ok=btn.dataset.correct==='true';btn.classList.add(ok?'correct':'wrong');if(ok){ownerState[idx]=true;card.querySelectorAll('button').forEach(b=>b.disabled=true);updateOwner();}}));});
+    $('#printSummary').addEventListener('click',()=>window.print()); updateOwner();
+
+    // ========================= SELF TESTS =========================
+    function almost(a,b,tol=1e-6){return Math.abs(a-b)<=tol;}
+    function matMul(a,b){return a.map((r,i)=>b[0].map((_,j)=>r.reduce((s,_,k)=>s+a[i][k]*b[k][j],0)));}
+    function runSelfTests(){const tests=[];const test=(name,fn)=>{try{const ok=!!fn();tests.push({name,ok});}catch(err){tests.push({name,ok:false,err:String(err)})}};
+      test('1 distance zero',()=>distance([1,2],[1,2])===0);test('2 distance symmetry',()=>almost(distance([0,0],[2,3]),distance([2,3],[0,0])));
+      Object.keys(DATASETS).forEach((k,idx)=>test(`${idx+3} LII ${k}`,()=>almost(lii(DATASETS[k]),REFERENCE_LII[k],8e-7)));
+      Object.keys(HOMOGRAPHIES).forEach((k,idx)=>test(`${idx+9} determinant ${k}`,()=>almost(determinant3(HOMOGRAPHIES[k]),DET_TARGET[k],1e-10)));
+      Object.keys(HOMOGRAPHIES).forEach((k,idx)=>test(`${idx+12} inverse ${k}`,()=>{const I=matMul(HOMOGRAPHIES[k],inverse3(HOMOGRAPHIES[k]));return I.every((r,i)=>r.every((v,j)=>almost(v,i===j?1:0,1e-10)));}));
+      test('15 S3+H2 raw',()=>almost(lii(transformPoints(DATASETS.S3,HOMOGRAPHIES.H2)),6.917916,1e-6));
+      test('16 S3+H2 recovered',()=>almost(lii(transformPoints(transformPoints(DATASETS.S3,HOMOGRAPHIES.H2),inverse3(HOMOGRAPHIES.H2))),REFERENCE_LII.S3,1e-12));
+      test('17 all 18 recovered',()=>Object.keys(DATASETS).every(ds=>Object.keys(HOMOGRAPHIES).every(h=>almost(lii(transformPoints(transformPoints(DATASETS[ds],HOMOGRAPHIES[h]),inverse3(HOMOGRAPHIES[h]))),REFERENCE_LII[ds],1e-6))));
+      test('18 AE/RE',()=>almost(ae(7,5),2)&&almost(re(6,5),20));
+      test('19 disk sampler within epsilon',()=>{const rng=mulberry32(42);for(let i=0;i<500;i++){const p=randomInDisk(.25,rng);if(Math.hypot(...p)>.2500000001)return false;}return true;});
+      test('20 localStorage fallback',()=>{try{localStorage.setItem('__lii_test','1');localStorage.removeItem('__lii_test');return true;}catch(e){return true;}});
+      return tests;
+    }
+
+    // ========================= INIT =========================
+    updateBuilder(); updateHomography(); renderErrorPlot(); renderResults(); drawHistogram([],1);
+    const params=new URLSearchParams(location.search);if(params.get('debug')==='1'){const tests=runSelfTests(),panel=$('#debugPanel');panel.classList.add('show');const passed=tests.filter(t=>t.ok).length;panel.innerHTML=`<strong>Self-tests: ${passed}/${tests.length} passed</strong><br><br>`+tests.map(t=>`<div class="${t.ok?'pass':'fail'}">${t.ok?'✓':'✗'} ${t.name}${t.err?' — '+t.err:''}</div>`).join('');}
+  })();
+  </script>
+</body>
+</html>
