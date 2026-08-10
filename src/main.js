@@ -1,5 +1,3 @@
-import '@ibm/plex-sans-thai/css/ibm-plex-sans-thai-default.css';
-import '@ibm/plex-mono/css/ibm-plex-mono-default.css';
 import { initTheme } from './ui/theme.js';
 import { refreshIcons } from './ui/icons.js';
 import { initPresetWorkflow } from './modules/00-preset-workflow.js';
@@ -8,22 +6,28 @@ import { initHomographyLab } from './modules/02-homography-lab.js';
 import { initErrorBound } from './modules/03-error-bound.js';
 import { initMonteCarlo } from './modules/04-monte-carlo.js';
 import { initReproduce18 } from './modules/05-reproduce-18.js';
-import { initOwnerMode } from './modules/06-owner-mode.js';
 import { initLiveDemo, stopLiveCamera } from './modules/07-live-demo.js';
-import { runSelfTests } from './tests/self-tests.js';
 import { generateTargetSVG, downloadTargetSVG, downloadTargetPNG } from './core/target-generator.js';
+import { presetMeasurementStore, liveMeasurementStore } from './core/measurement-store.js';
+import { mountAnalysisInstances } from './ui/analysis-context.js';
+
+function initAnalysisModules(root, store) {
+  initLiiBuilder({ root, store });
+  initHomographyLab({ root, store });
+  initErrorBound({ root, store });
+  initMonteCarlo({ root, store });
+  initReproduce18({ root, store });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize Theme System
   initTheme();
 
-  // Initialize the interactive lab modules.
-  initLiiBuilder();
-  initHomographyLab();
-  initErrorBound();
-  initMonteCarlo();
-  initReproduce18();
-  initOwnerMode();
+  const presetAnalysisRoot = document.getElementById('presetAnalysisModules');
+  const liveAnalysisRoot = document.getElementById('liveAnalysisModules');
+  mountAnalysisInstances(presetAnalysisRoot, liveAnalysisRoot);
+  initAnalysisModules(presetAnalysisRoot, presetMeasurementStore);
+  initAnalysisModules(liveAnalysisRoot, liveMeasurementStore);
   initLiveDemo();
 
   // Keep target generation available for the download actions.
@@ -44,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabLive = document.getElementById('tabModeLive');
   const viewPreset = document.getElementById('viewPreset');
   const viewLive = document.getElementById('viewLive');
-  const moduleNav = document.getElementById('moduleNav');
 
   function switchMode(mode) {
     if (mode === 'preset') {
@@ -54,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
       tabLive?.setAttribute('aria-pressed', 'false');
       if (viewPreset) viewPreset.hidden = false;
       if (viewLive) viewLive.hidden = true;
-      if (moduleNav) moduleNav.hidden = false;
       stopLiveCamera();
     } else if (mode === 'live') {
       if (tabLive) tabLive.classList.add('active');
@@ -63,9 +65,17 @@ document.addEventListener('DOMContentLoaded', () => {
       tabPreset?.setAttribute('aria-pressed', 'false');
       if (viewLive) viewLive.hidden = false;
       if (viewPreset) viewPreset.hidden = true;
-      if (moduleNav) moduleNav.hidden = true;
     }
   }
+
+  document.addEventListener('lii:open-confirmed-analysis', (event) => {
+    const source = event.detail?.source === 'live' ? 'live' : 'preset';
+    switchMode(source);
+    window.setTimeout(() => {
+      document.getElementById(source === 'live' ? 'live-lii' : 'lii')
+        ?.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
+  });
 
   initPresetWorkflow({
     onGoLive: () => {
@@ -96,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!targetId || targetId === 'top') return;
 
       e.preventDefault();
-      if (targetId === 'livedemo') {
+      if (targetId === 'livedemo' || targetId.startsWith('live-')) {
         switchMode('live');
       } else {
         switchMode('preset');
@@ -130,22 +140,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Run Self-Tests if URL query param ?debug=1 is set
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('debug') === '1') {
-    const tests = runSelfTests();
-    const panel = document.getElementById('debugPanel');
-    if (panel) {
-      panel.style.display = 'block';
-      const passed = tests.filter((t) => t.ok).length;
-      panel.innerHTML =
-        `<strong>Self-tests: ${passed}/${tests.length} passed</strong><br><br>` +
-        tests
-          .map(
-            (t) =>
-              `<div style="color:${t.ok ? '#4ade80' : '#f87171'}">${t.ok ? '✓' : '✗'} ${t.name}${t.err ? ' — ' + t.err : ''}</div>`
-          )
-          .join('');
-    }
-  }
 });

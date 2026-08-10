@@ -27,10 +27,12 @@ $$\left| \hat{L} - L_0 \right| \le 10\varepsilon$$
 
 1. **Preset Mode (โหมดสาธิตจากภาพถ่าย):**
    - ใช้ภาพถ่าย top-side view ที่ไม่มีจุดฝังอยู่ในไฟล์ แล้ววาง overlay แบบ SVG จากเว็บตามลำดับ $C_1-C_4$, สเกล 6×6 cm, $Q_1-Q_6$ และผลคำนวณ
-   - ใช้ calibration pipeline เดียวกับ Live Studio และรวมแบบจำลอง $S_1-S_6$, Error Bound, Monte Carlo และตาราง 18 เงื่อนไขไว้ในโหมดเดียวกัน
+   - ผู้ใช้ปรับตำแหน่ง $Q_1-Q_6$ ได้ ผลหลักจะคำนวณใหม่ทุกครั้งที่ปล่อยจุด ส่วนปุ่ม **ประมวลผลไปยัง Module 1–5** จะบันทึก snapshot ล่าสุดให้โมดูลวิเคราะห์ใช้ร่วมกัน
+   - ใช้ calibration pipeline เดียวกับ Live Studio และส่ง snapshot เดียวกันให้ Module 1–5 โดยไม่มี dataset จำลองในหน้าวิเคราะห์
 
 2. **📷 Live Studio Mode (โหมดกล้องถ่ายภาพจริง):**
    - ส튜디오สำหรับเปิดกล้องถ่ายภาพจริง หรือ Upload รูปถ่ายแผ่นเป้าหมายบนโต๊ะ
+   - กำหนดความกว้างและความสูงของพื้นที่สอบเทียบเป็น cm ได้เอง ไม่จำกัดที่ 6×6 cm
    - ระบบคำนวณ 4-Point DLT, ย้อนพิกัด $H_{est}^{-1}$ และประมวลผลความคลาดเคลื่อนสดหน้างาน
 
 ---
@@ -43,8 +45,8 @@ $$\left| \hat{L} - L_0 \right| \le 10\varepsilon$$
 - **Core Framework:** HTML5 + ES6 Modules (Vanilla JavaScript)
 - **Build Tool:** [Vite 8](https://vite.dev/) (HMR and static production bundling)
 - **Styling:** Custom CSS Design System (CSS Custom Properties, Dark Mode Tokens, Responsive Grid)
-- **Typography:** Self-hosted IBM Plex Sans Thai + IBM Plex Mono
-- **Icons:** Lucide
+- **Typography:** Self-hosted Anuphan variable font
+- **Icons:** Local Lucide icon-node registry (no runtime CDN/package resolution)
 - **Deployment:** GitHub Pages / Any Static Web Server (`base: './'`)
 
 ### 🏗️ โครงสร้างไฟล์ในระบบ (Directory Architecture)
@@ -65,25 +67,26 @@ NakornSawan2569-Math-LII/
 │   │   ├── math.js              # Vector/Scalar Math, LII, Euclidean Distance, PRNG (mulberry32)
 │   │   ├── matrix.js            # 3x3 Determinant, Matrix Inverse, Gaussian Elimination Solver
 │   │   ├── homography.js        # Point Transformations & 4-Point DLT Homography Estimation
-│   │   └── data.js              # Canonical Datasets (S1-S6), Homography Matrices (H1-H3), Published Results
+│   │   ├── measurement-store.js # Separate Preset/Live snapshots with independent localStorage keys
+│   │   └── data.js              # Canonical numerical fixtures used by automated math tests only
 │   ├── ui/                      # UI Visualization Renderers
+│   │   ├── analysis-context.js  # Scoped DOM instances for Preset and Live Module 1-5
 │   │   ├── image-workspace.js   # Photo layer + dynamic SVG overlay renderer
 │   │   ├── icons.js             # Lucide icon registry
 │   │   ├── svg-renderer.js      # Interactive 2D Vector Plotting Engine
 │   │   ├── drag.js              # Touch & Pointer Drag Interaction Handlers
 │   │   ├── histogram.js         # Canvas Monte Carlo Error Distribution Renderer
 │   │   └── theme.js             # Light / Dark Mode Toggle & State Management
-│   ├── modules/                 # Interactive Application Modules (00 - 07)
+│   ├── modules/                 # Measurement workflows and analysis modules
 │   │   ├── 00-preset-workflow.js # Staged photo-calibration demonstration
-│   │   ├── 01-lii-builder.js    # Module 01: Interactive LII Builder
-│   │   ├── 02-homography-lab.js # Module 02: Homography Distortion & Inverse Recovery Lab
-│   │   ├── 03-error-bound.js    # Module 03: 10-Epsilon Interactive Proof
-│   │   ├── 04-monte-carlo.js   # Module 04: Seeded Monte Carlo Simulation Lab
-│   │   ├── 05-reproduce-18.js   # Module 05: 18 Primary Conditions Validation Table
-│   │   ├── 06-owner-mode.js     # Module 06: Academic Presentation Q&A & Claim Guardrails
+│   │   ├── 01-lii-builder.js    # Module 01: Confirmed coordinates and LII
+│   │   ├── 02-homography-lab.js # Module 02: Actual image calibration matrix
+│   │   ├── 03-error-bound.js    # Module 03: Known-reference validation only
+│   │   ├── 04-monte-carlo.js   # Module 04: Uncertainty around confirmed Q snapshot
+│   │   ├── 05-reproduce-18.js   # Module 05: Confirmed Q segment breakdown
 │   │   └── 07-live-demo.js      # Module 07: Live Camera / Photo DLT Homography Calibration (Physical Demo)
 │   └── tests/
-│       ├── self-tests.js        # Automated Test Suite (32 Tests)
+│       ├── self-tests.js        # Automated mathematical and state-isolation tests
 │       └── run-tests.js         # Node.js test runner
 └── dist/                        # Production Ready Static Bundle
 ```
@@ -92,38 +95,32 @@ NakornSawan2569-Math-LII/
 
 ## 📖 คู่มือการใช้งาน (User Guide)
 
-แอปพลิเคชันประกอบด้วย 7 โมดูลหลัก สามารถใช้งานได้ทั้งบน Desktop, Tablet และ Mobile (iOS / Android):
+แอปพลิเคชันประกอบด้วย workflow สำหรับ Preset และ Live Studio โดยแต่ละหน้ามี Module 1–5 และ snapshot ที่บันทึกแยกกัน สามารถใช้งานได้ทั้งบน Desktop, Tablet และ Mobile (iOS / Android):
 
 ### 📷 Module 07: Live Physical Demo (สแกนภาพถ่ายจริงหน้างาน)
 โมดูลสำหรับเปิดกล้องถ่ายภาพกระดาษ Calibration Target จริงบนโต๊ะเพื่อทดสอบอัลกอริทึม DLT สดๆ
 > ขอบเขตการใช้งาน: Homography สมมติว่าจุดสอบเทียบและจุดวัดอยู่บนระนาบเดียวกัน จึงไม่ใช่เครื่องมือวัดพื้นผิววัตถุ 3 มิติหรือเครื่องมือวินิจฉัย
-1. **เตรียมแผ่น Calibration Target (6×6 cm):** วางแผ่นพิมพ์เป้าหมายบนโต๊ะในมุมเอียงตามต้องการ (หรือกดปุ่ม **✨ ใช้ภาพตัวอย่างจำลอง**)
+1. **กำหนด Calibration Target:** กรอกความกว้างและความสูงจริงของพื้นที่ C1-C4 เป็น cm; ภาพ Preset ใช้ 6×6 cm แต่ Live ใช้ขนาดบวกอื่นได้
 2. **นำเข้าภาพถ่าย:** กด **📷 เปิดกล้องสด** (ระบบจะเลือกกล้องหลังให้อัตโนมัติบนมือถือ) หรือเลือกไฟล์ภาพถ่ายจากเครื่อง
 3. **มาร์กจุดอ้างอิง 4 มุม ($C_1 - C_4$):** แตะมาร์กมุมกระดาษ 4 มุมเรียงตามลำดับ ระบบจะใช้ **4-point Direct Linear Transform (DLT)** สร้างเมทริกซ์ Homography $H_{est}$
 4. **มาร์กจุดวัดระยะ ($Q_1 - Q_6$):** แตะมาร์กจุดฟันทั้ง 6 จุดบนภาพถ่าย
-5. **ดูผลลัพธ์ย้อนพิกัด $H_{est}^{-1}$:** ระบบจะใช้ $H_{est}^{-1}$ แปลงพิกัดภาพพิกเซลกลับสู่พิกัดโลก $P̂_1 - P̂_6$ และคำนวณ $L_{rec}$ สำหรับภาพตัวอย่างที่รู้พิกัด S3 ระบบจึงจะตรวจสอบขอบเขต $|L̂ - L_0| \le 10\varepsilon$ ได้ ส่วนภาพที่ผู้ใช้อัปโหลดจะแสดงผลเป็น measurement only เพราะไม่มี ground truth สำหรับคำนวณ $\varepsilon$
+5. **ตรวจและส่งชุดจุด:** ระบบใช้ $H_{est}^{-1}$ แปลงพิกัดภาพกลับสู่พิกัดโลก $P̂_1-P̂_6$ และคำนวณ $L_{rec}$ ใหม่ทุกครั้งที่ปล่อยจุด เมื่อลาก $Q_1-Q_6$ จนพอใจแล้ว กด **ประมวลผลไปยัง Module 1–5** เพื่อส่ง snapshot ล่าสุดไปยัง LII Builder, Homography, Error Bound, Monte Carlo และตาราง validation การขยับ Q หลังจากนั้นยังอัปเดตผลหลักแบบ realtime แต่ Module 1–5 จะคง snapshot เดิมจนกดปุ่มอีกครั้ง สำหรับภาพตัวอย่างที่รู้พิกัดอ้างอิง ระบบจึงจะตรวจสอบขอบเขต $|L̂-L_0| \le 10\varepsilon$ ได้ ส่วนภาพที่ผู้ใช้อัปโหลดจะแสดงผลเป็น measurement only เพราะไม่มี ground truth สำหรับคำนวณ $\varepsilon$
 
-### 📏 Module 01: LII Builder
-- เลือกชุดพิกัดมาตรฐาน $S_1 - S_6$ หรือใช้เมาส์/นิ้วลากจุด $P_1 - P_6$ บนระนาบอ้างอิง $2\text{D}$
-- ระบบจะคำนวณผลรวมระยะทาง 5 ช่วง ($LII$) และอัปเดตตารางพิกัดแบบ Real-time
+### 📏 Module 01: LII Measurement
+- แสดงพิกัด Q1-Q6 หน่วย cm, ระยะทั้ง 5 ช่วง และ LII จาก snapshot ที่ยืนยัน
 
-### 🌀 Module 02: Homography Lab
-- เลือก Dataset ($S_1-S_6$) และเมทริกซ์ Homography ($H_1-H_3$)
-- เปรียบเทียบกราฟ 3 ช่อง: **Original** (พิกัดเดิม) → **Distorted** (บิดเบี้ยว $L_{raw}$) → **Recovered** (กู้คืนด้วย $H^{-1}$ ได้ $L_{rec}$)
+### 🌀 Module 02: Image Calibration
+- แสดง Q หน่วย pixel, เมทริกซ์ Homography ที่คำนวณจาก C1-C4 จริง และพิกัดที่กู้คืนเป็น cm
 
-### 🛡️ Module 03: Error Bound Lab ($10\varepsilon$ Proof)
-- ปรับแถบสไลด์กำหนดค่าความคลาดเคลื่อน $\varepsilon$ ($0.05 - 0.50$ หน่วย)
-- สุ่มจุดหรือลากจุดในวงกลมรัศมี $\varepsilon$ เพื่อพิสูจน์ว่าค่าความคลาดเคลื่อนจริง $|L̂ - L_0|$ จะไม่มีทางเกิน $10\varepsilon$
+### 🛡️ Module 03: Measurement Validation
+- คำนวณ error, $\varepsilon$ และ bound เฉพาะ snapshot ที่มี ground truth; ภาพผู้ใช้อัปโหลดจะแสดง Measurement Only
 
 ### 🎲 Module 04: Monte Carlo Lab
 - จำลองการสุ่มความคลาดเคลื่อนความผิดพลาดจำนวน $100 - 18,000$ รอบ ด้วย Seeded PRNG (`mulberry32`)
 - แสดงกราฟแท่งความถี่ (Histogram) บน Canvas และคำนวณสถิติ Mean, SD, P95, Max และ Pass Rate
 
-### 📊 Module 05: Reproduce 18 Conditions
-- ตารางแสดงผลการทดลอง $6 \text{ Datasets} \times 3 \text{ Homographies} = 18 \text{ เงื่อนไข}$ เปรียบเทียบกับค่าที่รายงานในเอกสารวิจัย
-
-### 🎓 Module 06: Owner Mode
-- คลังคำถาม-คำตอบ สำหรับทดสอบความเข้าใจในการนำเสนอโครงงานและป้องกันการกล่าวอ้างเกินหลักฐาน (Overclaim Detection)
+### 📊 Module 05: Segment Analysis
+- แจกแจงระยะ Q1→Q6 ทั้ง pixel, cm, cumulative LII และสัดส่วนของแต่ละช่วงจาก snapshot จริง
 
 ---
 
@@ -147,14 +144,14 @@ npm run dev
 
 ### 2. การรันชุดทดสอบอัตโนมัติ (Automated Self-Tests)
 
-ระบบมีชุดทดสอบ 32 ข้อ ครอบคลุม Determinant, Matrix Inverse, DLT Homography estimation, Error bound และ shared Preset/Live calibration session:
+ระบบมีชุดทดสอบ 34 ข้อ ครอบคลุม Determinant, Matrix Inverse, DLT Homography estimation, Error bound, shared Preset/Live calibration และ calibration แบบกำหนดขนาดเอง:
 
 ```bash
 # รันผ่าน Node.js ใน Terminal
 npm test
 ```
 
-หรือเปิดหน้าเว็บแล้วเติม Query parameter `?debug=1` เช่น: `http://localhost:5173/?debug=1`
+ชุด numerical fixtures สำหรับ self-test ไม่ถูก import เข้า runtime ของหน้าเว็บ และรันผ่าน `npm test` เท่านั้น
 
 ### 3. การ Build และ Deploy (Production & GitHub Pages)
 

@@ -11,10 +11,5 @@
   },
   "devDependencies": {
     "vite": "^8.2.1"
-  },
-  "dependencies": {
-    "@ibm/plex-mono": "^2.5.0",
-    "@ibm/plex-sans-thai": "^1.1.0",
-    "lucide": "^1.31.0"
   }
 }

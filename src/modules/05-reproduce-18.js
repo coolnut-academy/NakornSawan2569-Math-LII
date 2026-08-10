@@ -1,42 +1,60 @@
-// Module 05: Reproduce 18 Conditions (Live validation vs Published results)
-import { DATASETS, HOMOGRAPHIES, PUBLISHED } from '../core/data.js';
-import { lii, re, fmt } from '../core/math.js';
-import { inverse3 } from '../core/matrix.js';
-import { transformPoints } from '../core/homography.js';
+// Module 05: per-segment breakdown from one mode's confirmed measurement.
+import { distance, fmt } from '../core/math.js';
+import { getAnalysisElement } from '../ui/analysis-context.js';
 
-export function initReproduce18() {
-  renderResults();
-}
+export function initReproduce18({ root, store }) {
+  const get = (id) => getAnalysisElement(root, id);
+  let confirmedMeasurement = null;
 
-function renderResults() {
-  const body = document.getElementById('resultsBody');
-  if (!body) return;
+  function renderResults() {
+    const body = get('resultsBody');
+    if (!body) return;
+    body.innerHTML = '';
 
-  body.innerHTML = '';
-  Object.keys(DATASETS).forEach((ds) => {
-    Object.keys(HOMOGRAPHIES).forEach((h) => {
-      const L0 = lii(DATASETS[ds]);
-      const raw = lii(transformPoints(DATASETS[ds], HOMOGRAPHIES[h]));
-      const rec = lii(
-        transformPoints(
-          transformPoints(DATASETS[ds], HOMOGRAPHIES[h]),
-          inverse3(HOMOGRAPHIES[h])
-        )
-      );
-      const pub = PUBLISHED[`${ds}-${h}`];
-      const diff = Math.abs(raw - pub.raw);
+    if (!confirmedMeasurement) {
+      body.innerHTML = `<tr><td colspan="6" class="muted">ยังไม่มี Q1-Q6 ที่ยืนยันจาก ${store.label}</td></tr>`;
+      return;
+    }
 
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><strong>${ds} + ${h}</strong></td>
-        <td class="num">${fmt(L0, 6)}</td>
-        <td class="num">${fmt(raw, 4)}</td>
-        <td class="num">${pub.raw.toFixed(4)}</td>
-        <td class="num">${fmt(re(raw, L0), 4)}%</td>
-        <td class="num">${fmt(rec, 6)}</td>
-        <td class="num ${diff < 5e-5 ? 'match' : 'warn'}">${diff.toExponential(1)}</td>
+    const { imagePoints, result, targetWidth, targetHeight } = confirmedMeasurement;
+    const recovered = result.recoveredPoints;
+    const heading = document.createElement('tr');
+    heading.className = 'confirmed-result-heading';
+    heading.innerHTML = `<td colspan="6">Q1-Q6 · ${store.label} · calibration ${targetWidth}×${targetHeight} cm</td>`;
+    body.appendChild(heading);
+
+    let cumulative = 0;
+    for (let index = 0; index < recovered.length - 1; index += 1) {
+      const pixelLength = distance(imagePoints[index], imagePoints[index + 1]);
+      const calibratedLength = distance(recovered[index], recovered[index + 1]);
+      cumulative += calibratedLength;
+      const row = document.createElement('tr');
+      row.className = 'confirmed-result-row';
+      row.innerHTML = `
+        <td><strong>${index + 1}</strong></td>
+        <td>Q${index + 1} → Q${index + 2}</td>
+        <td class="num">${fmt(pixelLength, 3)} px</td>
+        <td class="num">${fmt(calibratedLength, 4)} cm</td>
+        <td class="num">${fmt(cumulative, 4)} cm</td>
+        <td class="num">${fmt((calibratedLength / result.recoveredLii) * 100, 2)}%</td>
       `;
-      body.appendChild(tr);
-    });
+      body.appendChild(row);
+    }
+
+    const total = document.createElement('tr');
+    total.className = 'confirmed-result-total';
+    total.innerHTML = `
+      <td colspan="3"><strong>รวม LII จาก 5 ช่วง</strong></td>
+      <td class="num"><strong>${fmt(result.recoveredLii, 4)} cm</strong></td>
+      <td class="num"><strong>${fmt(cumulative, 4)} cm</strong></td>
+      <td class="num"><strong>100%</strong></td>
+    `;
+    body.appendChild(total);
+  }
+
+  store.subscribe((measurement) => {
+    confirmedMeasurement = measurement;
+    renderResults();
   });
+  renderResults();
 }

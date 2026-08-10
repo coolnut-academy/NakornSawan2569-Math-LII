@@ -564,33 +564,6 @@ input[type="range"] {
   height: 6px;
 }
 
-/* Owner Mode progress dots */
-.owner-progress i {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--line);
-  display: inline-block;
-  transition: background 0.2s;
-}
-
-.owner-progress i.done {
-  background: var(--green);
-}
-
-/* Answer option button states */
-.answer-options button.correct {
-  border-color: var(--green) !important;
-  background: var(--green-soft) !important;
-  color: var(--green) !important;
-}
-
-.answer-options button.wrong {
-  border-color: var(--red) !important;
-  background: var(--red-soft) !important;
-  color: var(--red) !important;
-}
-
 /* Note box styling */
 .note {
   border-radius: 15px;

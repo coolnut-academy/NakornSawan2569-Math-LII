@@ -3,26 +3,27 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="icon" href="data:," />
   <meta name="color-scheme" content="light dark" />
-  <meta name="description" content="LII Lens Lab — Homography × Error Bound Analysis for Little’s Irregularity Index (LII)" />
-  <title>LII Lens Lab — Academic Proof of Concept</title>
+  <meta name="description" content="LII Dental Studio — ทดลองสอบเทียบและวัด Little’s Irregularity Index จากภาพถ่าย" />
+  <title>LII Dental Studio | Photo Measurement</title>
   
   <!-- KaTeX for Vector Mathematical Typography -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}] });"></script>
   
-  <script type="module" crossorigin src="./assets/index-uhvVbFxE.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-qVGY2Izo.css">
+  <script type="module" crossorigin src="./assets/index-Bk8yAJ_6.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-TYcZazym.css">
 </head>
 <body>
   <header class="site-header">
     <div class="container nav">
-      <a class="brand" href="#top" aria-label="LII Lens Lab home">
+      <a class="brand" href="#top" aria-label="LII Dental Studio home">
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M3 16.5 8 11l4 3.5L20.5 6" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="3" cy="16.5" r="1.4" fill="white"/><circle cx="8" cy="11" r="1.4" fill="white"/><circle cx="12" cy="14.5" r="1.4" fill="white"/><circle cx="20.5" cy="6" r="1.4" fill="white"/></svg>
         </span>
-        <span class="brand-copy"><strong>LII Lens Lab</strong><small>Homography & Error Bound</small></span>
+        <span class="brand-copy"><strong>LII Dental Studio</strong><small>Photo calibration & measurement</small></span>
       </a>
       <div class="header-actions">
         <div class="header-mode-switch" aria-label="เลือกโหมดการใช้งาน">
@@ -39,83 +40,70 @@
         </button>
       </div>
     </div>
-    <nav class="module-nav" id="moduleNav" aria-label="โมดูลการทดลอง">
-      <div class="container module-nav-track">
-        <a href="#preset-workflow">ภาพตัวอย่าง</a>
-        <a href="#lii">LII Builder</a>
-        <a href="#homography">Homography</a>
-        <a href="#bound">Error Bound</a>
-        <a href="#montecarlo">Monte Carlo</a>
-        <a href="#results">18 Conditions</a>
-        <a href="#owner">Owner Mode</a>
-      </div>
-    </nav>
   </header>
 
   <main id="top">
-    <section class="lab-intro">
-      <div class="container lab-intro-grid">
-        <div>
-          <p class="kicker">Applied Mathematics · Projective Geometry</p>
-          <h1>LII Lens Lab</h1>
-          <p class="lead">ทดลองวัด Little’s Irregularity Index จากภาพถ่าย เรียนรู้ผลของ perspective distortion การแปลงกลับด้วย \(H^{-1}\) และขอบเขตความคลาดเคลื่อน \(10\varepsilon\)</p>
-        </div>
-        <div class="intro-equation" aria-label="สมการหลักของโครงการ">
-          <span>ความสัมพันธ์หลัก</span>
-          <strong>\(|\hat{L} - L_0| \le 10\varepsilon\)</strong>
-          <small>Proof of Concept · ไม่ใช่เครื่องมือวินิจฉัย</small>
-        </div>
-      </div>
-    </section>
-
     <!-- ================= VIEW 1: PRESET MODE ================= -->
     <div id="viewPreset">
       <section class="section preset-workflow-section" id="preset-workflow">
         <div class="container">
           <div class="section-title workflow-heading">
             <div>
-              <div class="eyebrow">Preset workflow</div>
-              <h2>ดูตัวอย่างตั้งแต่ภาพถ่ายจนถึงผลคำนวณ</h2>
-              <p class="lead">ภาพต้นฉบับไม่มีจุดฝังอยู่ในไฟล์ เว็บจะวางจุดสอบเทียบ จุดวัด และสเกลตามลำดับเดียวกับ Live Studio</p>
+              <div class="eyebrow">Preset · Top-side view</div>
+              <h1>ตัวอย่างการวัดจากภาพถ่าย</h1>
+              <p class="lead">ดูตำแหน่งกล้อง กรอบสอบเทียบ และจุดวัดก่อนเริ่มทำกับภาพของคุณ</p>
             </div>
-            <div class="workflow-state" aria-live="polite">
-              <strong id="presetStageStatus">ภาพต้นฉบับ</strong>
-              <span id="presetStageCounter">1/13</span>
+            <div class="workflow-context" aria-label="ข้อมูลภาพตัวอย่าง">
+              <span>TOP VIEW</span>
+              <span>6 × 6 CM</span>
+              <span>6 POINTS</span>
             </div>
           </div>
 
-          <div class="workflow-tabs" role="tablist" aria-label="ขั้นตอนตัวอย่าง">
-            <button class="active" data-preset-phase="0" role="tab" aria-selected="true">ภาพต้นฉบับ</button>
-            <button data-preset-phase="1" role="tab" aria-selected="false">Calibration</button>
-            <button data-preset-phase="2" role="tab" aria-selected="false">Scale</button>
-            <button data-preset-phase="3" role="tab" aria-selected="false">จุด LII</button>
-            <button data-preset-phase="4" role="tab" aria-selected="false">ผลลัพธ์</button>
-          </div>
-
-          <div id="presetWorkflowWorkspace"></div>
-
-          <div class="workflow-controls" aria-label="ควบคุมตัวอย่าง">
-            <div class="workflow-controls-primary">
-              <button class="btn btn-primary btn-sm" id="presetPlay" type="button"><i data-lucide="play"></i><span>เล่นตัวอย่าง</span></button>
-              <button class="icon-btn" id="presetPrevious" type="button" aria-label="ขั้นตอนก่อนหน้า" disabled><i data-lucide="chevron-left"></i></button>
-              <button class="icon-btn" id="presetNext" type="button" aria-label="ขั้นตอนถัดไป"><i data-lucide="chevron-right"></i></button>
-              <button class="icon-btn" id="presetReset" type="button" aria-label="เริ่มใหม่"><i data-lucide="rotate-ccw"></i></button>
-              <button class="icon-btn" id="presetToggleOverlay" type="button" aria-label="ซ่อนจุดและเส้น"><i data-lucide="eye-off"></i></button>
+          <div class="preset-studio">
+            <div class="preset-canvas-column">
+              <div class="workflow-tabs" role="tablist" aria-label="ขั้นตอนตัวอย่าง">
+                <button class="active" data-preset-phase="0" role="tab" aria-selected="true"><span>01</span> ภาพต้นฉบับ</button>
+                <button data-preset-phase="1" role="tab" aria-selected="false"><span>02</span> กรอบสอบเทียบ</button>
+                <button data-preset-phase="2" role="tab" aria-selected="false"><span>03</span> สเกล</button>
+                <button data-preset-phase="3" role="tab" aria-selected="false"><span>04</span> จุด LII</button>
+                <button data-preset-phase="4" role="tab" aria-selected="false"><span>05</span> ผลลัพธ์</button>
+              </div>
+              <div id="presetWorkflowWorkspace"></div>
             </div>
-            <button class="btn btn-secondary btn-sm" id="presetGoLive" type="button"><i data-lucide="camera"></i><span>ลองทำเองใน Live Studio</span></button>
-          </div>
 
-          <div class="workflow-results" id="presetWorkflowResults" hidden>
-            <div class="metric"><label>Reference L₀</label><div class="value" id="presetL0">—</div></div>
-            <div class="metric strong"><label>Recovered Lrec</label><div class="value" id="presetLrec">—</div></div>
-            <div class="metric"><label>Max point ε</label><div class="value" id="presetEps">—</div></div>
-            <div class="metric"><label>Bound 10ε</label><div class="value" id="presetBound">—</div></div>
-            <div class="metric"><label>Status</label><div class="value" id="presetResultStatus">—</div></div>
-          </div>
+            <aside class="preset-control-panel">
+              <div class="workflow-state" aria-live="polite">
+                <span>ขั้นตอนปัจจุบัน</span>
+                <strong id="presetStageStatus">ภาพต้นฉบับ</strong>
+                <small id="presetStageCounter">1/13</small>
+              </div>
 
-          <div class="academic-callout">
-            <strong>ขอบเขตของตัวอย่าง</strong>
-            <span>ภาพนี้สาธิตการจัดวางและลำดับการทำงาน จุดบนโมเดลฟันเป็นวัตถุ 3 มิติ จึงไม่ใช่หลักฐานยืนยันความแม่นยำทางคลินิก</span>
+              <div class="workflow-controls" aria-label="ควบคุมตัวอย่าง">
+                <button class="btn btn-secondary" id="presetPlay" type="button"><i data-lucide="play"></i><span>เล่นลำดับตัวอย่าง</span></button>
+                <div class="workflow-controls-primary">
+                  <button class="icon-btn" id="presetPrevious" type="button" aria-label="ขั้นตอนก่อนหน้า" disabled><i data-lucide="chevron-left"></i></button>
+                  <button class="icon-btn" id="presetNext" type="button" aria-label="ขั้นตอนถัดไป"><i data-lucide="chevron-right"></i></button>
+                  <button class="icon-btn" id="presetReset" type="button" aria-label="เริ่มใหม่"><i data-lucide="rotate-ccw"></i></button>
+                  <button class="icon-btn" id="presetToggleOverlay" type="button" aria-label="ซ่อนจุดและเส้น"><i data-lucide="eye-off"></i></button>
+                </div>
+                <button class="btn btn-primary" id="presetAnalyze" type="button" disabled><i data-lucide="calculator"></i><span>ประมวลผลไปยัง Module 1–5</span></button>
+              </div>
+
+              <div class="workflow-results" id="presetWorkflowResults" hidden>
+                <div class="metric"><label>Reference L₀</label><div class="value" id="presetL0">—</div></div>
+                <div class="metric strong"><label>Recovered Lrec</label><div class="value" id="presetLrec">—</div></div>
+                <div class="metric"><label>Max point ε</label><div class="value" id="presetEps">—</div></div>
+                <div class="metric"><label>Bound 10ε</label><div class="value" id="presetBound">—</div></div>
+                <div class="metric"><label>Status</label><div class="value" id="presetResultStatus">—</div></div>
+              </div>
+
+              <div class="preset-boundary-note">
+                <strong>ภาพสาธิต ไม่ใช่ผลวินิจฉัย</strong>
+                <span>จุดและเส้นทั้งหมดสร้างโดยหน้าเว็บ ไม่ได้ฝังอยู่ในภาพต้นฉบับ</span>
+              </div>
+              <button class="btn btn-secondary preset-live-cta" id="presetGoLive" type="button"><i data-lucide="camera"></i><span>เริ่มวัดภาพของคุณ</span></button>
+            </aside>
           </div>
 
           <div class="target-download-band">
@@ -132,11 +120,23 @@
         </div>
       </section>
 
+      <div id="presetAnalysisModules" class="analysis-modules" data-analysis-source="preset">
+      <nav class="module-nav" id="moduleNav" aria-label="โมดูลการวิเคราะห์ Preset">
+        <div class="container module-nav-track">
+          <span data-analysis-title>ผลวิเคราะห์ Preset</span>
+          <a href="#lii">LII Builder</a>
+          <a href="#homography">Homography</a>
+          <a href="#bound">Error Bound</a>
+          <a href="#montecarlo">Monte Carlo</a>
+          <a href="#results">Segment Detail</a>
+        </div>
+      </nav>
+
       <!-- MODULE 01: LII BUILDER -->
       <section class="section" id="lii">
         <div class="container">
           <div class="section-title">
-            <div><div class="eyebrow">Module 01</div><h2>LII Builder</h2><p class="lead">ลากจุดทั้ง 6 จุดแล้วดูว่า “ผลรวมระยะ 5 ช่วง” เปลี่ยนอย่างไรแบบ real time</p></div>
+            <div><div class="eyebrow">Module 01</div><h2>LII Measurement</h2><p class="lead">พิกัดจริงบนระนาบ calibration และผลรวมระยะ 5 ช่วงจาก Q ที่ยืนยันล่าสุด</p></div>
             <button class="icon-text-btn" data-guide-toggle="guide01" type="button"><i data-lucide="circle-help"></i><span>วิธีใช้งาน</span></button>
           </div>
 
@@ -144,35 +144,35 @@
             <h4>วิธีใช้งาน Module 01: LII Builder</h4>
             <ol class="guide-steps">
               <li><strong>แนวคิดหลัก:</strong> ดัชนี LII คือการนำระยะห่างระหว่างจุดที่อยู่ติดกัน 5 ช่วง ($P_1P_2 + P_2P_3 + P_3P_4 + P_4P_5 + P_5P_6$) มาบวกกัน</li>
-              <li><strong>ทดลองลากจุด:</strong> ใช้นิ้วหรือเมาส์ลากจุด $P_1$ ถึง $P_6$ บนกราฟ แล้วสังเกตค่า <strong>Live LII</strong> ที่คำนวณสดในกล่องทางขวา</li>
-              <li><strong>เลือกแบบจำลอง:</strong> กดเลือกชุดพิกัดสำเร็จรูป $S_1$ ถึง $S_6$ จากเมนูเพื่อดูรูปทรงความซ้อนของฟันระดับต่างๆ</li>
+              <li><strong>แหล่งข้อมูล:</strong> โมดูลนี้รอ Q1-Q6 ที่ยืนยันจากหน้านี้และไม่สร้าง dataset จำลองขึ้นเอง</li>
+              <li><strong>ผลลัพธ์:</strong> แสดงพิกัดหน่วย cm ระยะทั้ง 5 ช่วง และค่า LII ของ snapshot ที่ยืนยัน</li>
             </ol>
           </div>
 
           <div class="grid-2">
             <div class="card card-pad">
               <div class="card-head">
-                <div><h3>Interactive reference plane</h3><p>เลือกชุด S1–S6 หรือปรับจุดเอง</p></div>
-                <span id="builderDatasetBadge" class="badge badge-blue">S3</span>
+                <div><h3>Calibrated reference plane</h3><p>Q1-Q6 จากภาพที่ยืนยันล่าสุด</p></div>
+                <span id="builderDatasetBadge" class="badge badge-blue">รอข้อมูล</span>
               </div>
               <div class="controls" style="margin-bottom:14px">
                 <div class="control"><label for="datasetSelect">ชุดพิกัด</label><select id="datasetSelect"></select></div>
-                <button class="btn btn-secondary btn-sm" id="resetBuilder" type="button">Reset</button>
+                <button class="btn btn-secondary btn-sm" id="resetBuilder" type="button">คืนค่า Snapshot</button>
                 <button class="btn btn-ghost btn-sm" id="equationReader" type="button">อ่านสมการภาษาง่าย</button>
               </div>
               <div class="sim-panel">
-                <div class="sim-toolbar"><strong>Reference coordinates</strong><span class="hint">ลากจุด P₁–P₆ ได้</span></div>
+                <div class="sim-toolbar"><strong>Measurement coordinates</strong><span class="hint">หน่วย cm</span></div>
                 <svg id="builderPlot" class="plot" viewBox="0 0 720 405"></svg>
               </div>
               <div id="equationExplain" class="note" hidden style="margin-top:14px"><strong>ภาษาง่าย:</strong> มี 6 จุด เกิดระยะห่างระหว่างจุดที่ติดกัน 5 ช่วง นำระยะยูคลิดแต่ละช่วงมาบวกกัน</div>
             </div>
             <div class="card card-pad">
-              <div class="card-head"><div><h3>Live calculation</h3><p>แก้ตัวเลขในตารางได้เช่นกัน</p></div></div>
+              <div class="card-head"><div><h3>Confirmed calculation</h3><p>คำนวณจาก snapshot เดียวกับ Module 2–5</p></div></div>
               <div class="formula big">$$\text{LII} = \sum_{i=1}^{5} \sqrt{(x_{i+1}-x_i)^2 + (y_{i+1}-y_i)^2}$$</div>
               <div class="grid-3" style="margin:16px 0">
-                <div class="metric strong"><label>Live LII</label><div class="value" id="liveLii">—</div></div>
+                <div class="metric strong"><label>Confirmed LII</label><div class="value" id="liveLii">—</div></div>
                 <div class="metric"><label>Reference \(L_0\)</label><div class="value" id="refLii">—</div></div>
-                <div class="metric"><label>\(\Delta\) from preset</label><div class="value" id="builderDelta">—</div></div>
+                <div class="metric"><label>\(\Delta\) from reference</label><div class="value" id="builderDelta">—</div></div>
               </div>
               <div class="coord-table-wrap"><table><thead><tr><th>Point</th><th>x</th><th>y</th><th>segment to next</th></tr></thead><tbody id="coordBody"></tbody></table></div>
               <p id="builderAnnounce" class="sr-only" aria-live="polite"></p>
@@ -185,30 +185,30 @@
       <section class="section" id="homography">
         <div class="container">
           <div class="section-title">
-            <div><div class="eyebrow">Module 02</div><h2>Homography Lab</h2><p class="lead">เปรียบเทียบพิกัดต้นฉบับ ภาพที่ถูกบิด และผลหลังใช้ \(H^{-1}\)</p></div>
+            <div><div class="eyebrow">Module 02</div><h2>Image Calibration</h2><p class="lead">ตรวจพิกัด pixel, เมทริกซ์จาก C1-C4 และพิกัด cm หลังใช้ \(H^{-1}\)</p></div>
             <button class="icon-text-btn" data-guide-toggle="guide02" type="button"><i data-lucide="circle-help"></i><span>วิธีใช้งาน</span></button>
           </div>
 
           <div id="guide02" class="guide-box" hidden style="margin-bottom:24px">
             <h4>วิธีใช้งาน Module 02: Homography Lab</h4>
             <ol class="guide-steps">
-              <li><strong>เปรียบเทียบ 3 รูป:</strong> ดูความแตกต่างระหว่าง <strong>01 Original</strong> (วัตถุจริง) $\rightarrow$ <strong>02 Distorted</strong> (ภาพเอียง $L_{\text{raw}}$) $\rightarrow$ <strong>03 Recovered</strong> (กู้คืนด้วย $H^{-1}$)</li>
-              <li><strong>ปรับระดับการเอียง:</strong> ลองเปลี่ยน Homography จาก H1 (เอียงน้อย) เป็น H3 (เอียงมาก) แล้วสังเกตว่าค่า $L_{\text{raw}}$ เพี้ยนไปไกลแค่ไหน</li>
-              <li><strong>สรุปผล:</strong> ค่า $L_{\text{rec}}$ ในช่องที่ 3 จะถูกกู้คืนกลับมาเท่ากับค่าจริง $L_0$ เสมอเมื่อใช้เมทริกซ์ผกผัน $H^{-1}$</li>
+              <li><strong>Image points:</strong> Q1-Q6 ที่ผู้ใช้วางบนภาพ หน่วย pixel</li>
+              <li><strong>Calibrated plane:</strong> ใช้ขนาดพื้นที่สอบเทียบและ $H^{-1}$ แปลง Q เป็นหน่วย cm</li>
+              <li><strong>Reference comparison:</strong> แสดงเฉพาะเมื่อภาพมี ground truth เช่น Preset; ภาพผู้ใช้จะไม่สร้างค่าจริงอ้างอิงขึ้นเอง</li>
             </ol>
           </div>
 
           <div class="card card-pad" style="margin-bottom:20px">
             <div class="controls">
-              <div class="control"><label for="hDataset">Dataset</label><select id="hDataset"></select></div>
-              <div class="control"><label for="hMatrix">Homography</label><select id="hMatrix"><option value="H1">H1 — ต่ำ</option><option value="H2" selected>H2 — ปานกลาง</option><option value="H3">H3 — สูง</option></select></div>
+              <div class="control"><label for="hDataset">Measurement</label><select id="hDataset"></select></div>
+              <div class="control"><label for="hMatrix">Homography</label><select id="hMatrix"></select></div>
               <div class="control" style="min-width:220px"><label>หลักการ</label><div class="formula" style="padding:9px 12px">\(\tilde{Q} \sim H \tilde{P} \implies \tilde{P} \sim H^{-1} \tilde{Q}\)</div></div>
             </div>
           </div>
           <div class="triple">
-            <div class="sim-panel"><div class="triple-title">01 • Original</div><svg id="originalPlot" class="plot" viewBox="0 0 520 390"></svg></div>
-            <div class="sim-panel"><div class="triple-title">02 • Distorted</div><svg id="distortedPlot" class="plot" viewBox="0 0 520 390"></svg></div>
-            <div class="sim-panel"><div class="triple-title">03 • Recovered</div><svg id="recoveredPlot" class="plot" viewBox="0 0 520 390"></svg></div>
+            <div class="sim-panel"><div class="triple-title">01 • Image points (px)</div><svg id="originalPlot" class="plot" viewBox="0 0 520 390"></svg></div>
+            <div class="sim-panel"><div class="triple-title">02 • Calibrated plane (cm)</div><svg id="distortedPlot" class="plot" viewBox="0 0 520 390"></svg></div>
+            <div class="sim-panel"><div class="triple-title">03 • Reference comparison</div><svg id="recoveredPlot" class="plot" viewBox="0 0 520 390"></svg></div>
           </div>
           <div class="grid-4" style="margin-top:16px">
             <div class="metric"><label>\(L_0\)</label><div class="value" id="hL0">—</div></div>
@@ -218,7 +218,7 @@
           </div>
           <div class="grid-2" style="margin-top:20px">
             <article class="card card-pad">
-              <div class="card-head"><div><h3>เมทริกซ์ที่กำลังใช้</h3><p id="matrixLevel">H2 • ระดับปานกลาง</p></div><span class="badge badge-blue" id="detBadge">det = —</span></div>
+              <div class="card-head"><div><h3>เมทริกซ์ที่กำลังใช้</h3><p id="matrixLevel">รอ C1-C4 และขนาด calibration</p></div><span class="badge badge-blue" id="detBadge">det = —</span></div>
               <div class="matrix-grid" id="matrixGrid"></div>
             </article>
             <article class="card card-pad">
@@ -233,26 +233,22 @@
       <section class="section" id="bound">
         <div class="container">
           <div class="section-title">
-            <div><div class="eyebrow">Module 03</div><h2>Error Bound Lab</h2><p class="lead">ทดลองกับข้อพิสูจน์หลักของโครงงาน: ถ้าแต่ละจุดคลาดไม่เกิน \(\varepsilon\) แล้ว LII จะคลาดไม่เกิน \(10\varepsilon\)</p></div>
+            <div><div class="eyebrow">Module 03</div><h2>Measurement Validation</h2><p class="lead">ตรวจ error และขอบเขตจาก reference จริงเท่านั้น โดยไม่สร้างค่า ground truth จำลอง</p></div>
             <button class="icon-text-btn" data-guide-toggle="guide03" type="button"><i data-lucide="circle-help"></i><span>วิธีใช้งาน</span></button>
           </div>
 
           <div id="guide03" class="guide-box" hidden style="margin-bottom:24px">
             <h4>วิธีใช้งาน Module 03: Error Bound Lab</h4>
             <ol class="guide-steps">
-              <li><strong>ความหมายของ $\varepsilon$ (Epsilon):</strong> รัศมีวงกลมประสีแดงรอบจุด คือขอบเขตความคลาดเคลื่อนสูงสุดที่จุดนั้นอาจขยับได้</li>
-              <li><strong>ทดลองขยับจุด:</strong> กดปุ่ม <em>"สุ่มจุดในวง $\varepsilon$"</em> หรือลากจุดสีแดงด้วยมือ แล้วสังเกตกล่อง <strong>Actual Error</strong> ($|\hat{L} - L_0|$)</li>
-              <li><strong>สรุปทฤษฎีบท:</strong> ไม่ว่าจะสุ่มหรือลากจุดไปทิศทางใด ค่าความคลาดเคลื่อนจริงจะ <strong>ไม่มีทางเกินค่าเพดาน $10\varepsilon$ (PASS เสมอ)</strong></li>
+              <li><strong>Known reference:</strong> Preset ที่มีพิกัดจริงสามารถคำนวณ $\varepsilon$, actual error และ $10\varepsilon$ ได้</li>
+              <li><strong>Uploaded image:</strong> หากไม่มี ground truth ระบบจะแสดง Measurement Only และไม่สรุป PASS/FAIL</li>
+              <li><strong>แหล่งข้อมูล:</strong> กราฟและตัวเลขมาจาก Q snapshot ที่ยืนยันล่าสุดเท่านั้น</li>
             </ol>
           </div>
 
           <div class="grid-2">
             <div class="card card-pad">
-              <div class="controls" style="margin-bottom:14px">
-                <div class="control" style="flex:1"><label for="epsilonRange">\(\varepsilon\) = <span id="epsLabel">0.25</span> หน่วย</label><input id="epsilonRange" type="range" min="0.05" max="0.50" step="0.05" value="0.25" /></div>
-                <button id="randomPerturb" class="btn btn-blue btn-sm" type="button">สุ่มจุดในวง \(\varepsilon\)</button>
-                <button id="resetPerturb" class="btn btn-secondary btn-sm" type="button">Reset</button>
-              </div>
+              <div class="analysis-source" id="errorAnalysisSource">รอ Q1-Q6 ที่ยืนยันจากหน้านี้</div>
               <div class="sim-panel"><svg id="errorPlot" class="plot" viewBox="0 0 720 405"></svg></div>
             </div>
             <div class="card card-pad">
@@ -272,14 +268,14 @@
       <section class="section" id="montecarlo">
         <div class="container">
           <div class="section-title">
-            <div><div class="eyebrow">Module 04</div><h2>Monte Carlo Lab</h2><p class="lead">สุ่ม error ของแต่ละจุดในวงรัศมี \(\varepsilon\) แล้วดู distribution ของ \(|\hat{L} - L_0|\)</p></div>
+            <div><div class="eyebrow">Module 04</div><h2>Measurement Uncertainty</h2><p class="lead">จำลองความไวต่อความคลาดเคลื่อนโดยใช้ Q ที่ยืนยันจริงเป็นจุดตั้งต้น</p></div>
             <button class="icon-text-btn" data-guide-toggle="guide04" type="button"><i data-lucide="circle-help"></i><span>วิธีใช้งาน</span></button>
           </div>
 
           <div id="guide04" class="guide-box" hidden style="margin-bottom:24px">
             <h4>วิธีใช้งาน Module 04: Monte Carlo Lab</h4>
             <ol class="guide-steps">
-              <li><strong>หลักการ Monte Carlo:</strong> จำลองสุ่มการคลาดเคลื่อน $1,000 - 18,000$ รอบในเบราว์เซอร์</li>
+              <li><strong>หลักการ Monte Carlo:</strong> จำลองการคลาดเคลื่อนรอบ Q snapshot จริง $100-18,000$ รอบในเบราว์เซอร์</li>
               <li><strong>เริ่มรัน:</strong> เลือกจำนวนรอบ แล้วกดปุ่ม <em>"Run simulation"</em></li>
               <li><strong>อ่านกราฟ:</strong> แท่งสีฟ้าต้องอยู่ฝั่งซ้ายของเส้นขอบเขตสีแดง $10\varepsilon$ (Pass Rate 100%)</li>
             </ol>
@@ -288,7 +284,7 @@
           <div class="grid-2">
             <div class="card card-pad">
               <div class="controls">
-                <div class="control"><label for="mcDataset">Dataset</label><select id="mcDataset"></select></div>
+                <div class="control"><label for="mcDataset">Measurement</label><select id="mcDataset"></select></div>
                 <div class="control"><label for="mcEpsilon">\(\varepsilon\)</label><select id="mcEpsilon"><option value="0.10">0.10</option><option value="0.25" selected>0.25</option><option value="0.50">0.50</option></select></div>
                 <div class="control"><label for="mcTrials">Trials</label><select id="mcTrials"><option>100</option><option selected>1000</option><option>5000</option><option>18000</option></select></div>
                 <div class="control"><label for="mcSeed">Seed</label><input id="mcSeed" type="number" value="20260617" step="1" /></div>
@@ -298,7 +294,7 @@
               <div class="canvas-wrap" style="margin-top:14px"><canvas id="mcCanvas" width="900" height="300"></canvas></div>
             </div>
             <div class="card card-pad">
-              <div class="card-head"><div><h3>Browser Experiment</h3><p id="mcMeta">ยังไม่ได้รัน</p></div><span id="mcPassBadge" class="badge badge-blue">Ready</span></div>
+              <div class="card-head"><div><h3>Uncertainty Result</h3><p id="mcMeta">รอ Q1-Q6 ที่ยืนยัน</p></div><span id="mcPassBadge" class="badge badge-blue">Waiting</span></div>
               <div class="grid-3">
                 <div class="metric"><label>Mean</label><div id="mcMean" class="value">—</div></div>
                 <div class="metric"><label>SD</label><div id="mcSD" class="value">—</div></div>
@@ -312,41 +308,18 @@
         </div>
       </section>
 
-      <!-- MODULE 05: REPRODUCE 18 CASES -->
+      <!-- MODULE 05: CONFIRMED SEGMENT ANALYSIS -->
       <section class="section" id="results">
         <div class="container">
           <div class="section-title">
-            <div><div class="eyebrow">Module 05</div><h2>Reproduce 18 Conditions</h2><p class="lead">คำนวณ S1–S6 × H1–H3 ใน browser แล้วเทียบกับค่าที่รายงานไว้</p></div>
+            <div><div class="eyebrow">Module 05</div><h2>Segment Analysis</h2><p class="lead">แจกแจงระยะ Q1→Q6 จากภาพจริงเป็น pixel และระยะหลัง calibration เป็น cm</p></div>
           </div>
           <div class="card card-pad">
-            <div class="coord-table-wrap" style="max-height:520px"><table class="result-table"><thead><tr><th>Case</th><th>L₀</th><th>Calculated Lraw</th><th>Published Lraw</th><th>RE</th><th>Lrec</th><th>Δ publish</th></tr></thead><tbody id="resultsBody"></tbody></table></div>
+            <div class="coord-table-wrap" style="max-height:520px"><table class="result-table"><thead><tr><th>#</th><th>Segment</th><th>Image distance</th><th>Calibrated distance</th><th>Cumulative LII</th><th>Share</th></tr></thead><tbody id="resultsBody"></tbody></table></div>
           </div>
         </div>
       </section>
-
-      <!-- MODULE 06: OWNER MODE -->
-      <section class="section" id="owner">
-        <div class="container">
-          <div class="section-title">
-            <div><div class="eyebrow">Module 06</div><h2>Owner Mode</h2><p class="lead">เช็กว่าคุณสามารถอธิบายแก่นของโครงงานได้ โดยไม่หลุดขอบเขตของ Mathematical Proof of Concept</p></div>
-            <div class="owner-progress" id="ownerDots" style="display:flex;gap:8px"><i></i><i></i><i></i></div>
-          </div>
-          <div class="grid-3">
-            <article class="question-card card card-pad" data-owner="0">
-              <span class="badge badge-blue">Challenge 1</span><h3 style="margin-top:12px">ทำไม Lraw จึงเปลี่ยน?</h3><p class="small muted">เลือกคำอธิบายที่ถูกต้องที่สุด</p>
-              <div class="answer-options" style="display:grid;gap:8px"><button class="btn btn-secondary btn-sm" data-correct="false">เพราะ Homography ทำให้จำนวนจุดเพิ่มขึ้น</button><button class="btn btn-secondary btn-sm" data-correct="true">เพราะ Homography โดยทั่วไปไม่รักษา Euclidean distance</button><button class="btn btn-secondary btn-sm" data-correct="false">เพราะ LII ต้องคำนวณจากภาพ 3 มิติเท่านั้น</button></div>
-            </article>
-            <article class="question-card card card-pad" data-owner="1">
-              <span class="badge badge-amber">Challenge 2</span><h3 style="margin-top:12px">10ε หมายความว่าอะไร?</h3><p class="small muted">เลือกประโยคที่ปลอดภัยเชิงวิชาการ</p>
-              <div class="answer-options" style="display:grid;gap:8px"><button class="btn btn-secondary btn-sm" data-correct="false">ทุกครั้ง error จะเท่ากับ 10ε พอดี</button><button class="btn btn-secondary btn-sm" data-correct="false">10ε คือ error ใน pixel ของภาพถ่ายโดยตรง</button><button class="btn btn-secondary btn-sm" data-correct="true">เป็น upper bound ภายใต้เงื่อนไขว่าจุดบน reference plane คลาดไม่เกิน ε</button></div>
-            </article>
-            <article class="question-card card card-pad" data-owner="2">
-              <span class="badge badge-red">Challenge 3</span><h3 style="margin-top:12px">ประโยคใด “กล่าวเกินหลักฐาน”?</h3><p class="small muted">Overclaim detector</p>
-              <div class="answer-options" style="display:grid;gap:8px"><button class="btn btn-secondary btn-sm" data-correct="false">แบบจำลองแสดง internal consistency บน simulated 2D data</button><button class="btn btn-secondary btn-sm" data-correct="true">ระบบนี้ยืนยันความแม่นยำทางคลินิกสำหรับภาพฟันจริงแล้ว</button><button class="btn btn-secondary btn-sm" data-correct="false">การใช้ H⁻¹ ที่ถูกต้องกู้คืนค่าในกรณีอุดมคติได้ภายใน floating-point precision</button></div>
-            </article>
-          </div>
-        </div>
-      </section>
+      </div>
     </div>
 
     <!-- ================= VIEW 2: LIVE STUDIO MODE ================= -->
@@ -384,6 +357,18 @@
                 <p id="demoStepHint" class="small muted"></p>
               </div>
 
+              <div class="live-calibration-size" aria-label="ขนาดพื้นที่สอบเทียบ">
+                <div class="control">
+                  <label for="calibrationWidth">ความกว้าง (cm)</label>
+                  <input id="calibrationWidth" type="number" inputmode="decimal" min="0.01" step="0.1" value="6" />
+                </div>
+                <span aria-hidden="true">×</span>
+                <div class="control">
+                  <label for="calibrationHeight">ความสูง (cm)</label>
+                  <input id="calibrationHeight" type="number" inputmode="decimal" min="0.01" step="0.1" value="6" />
+                </div>
+              </div>
+
               <div class="upload-area" id="demoUploadArea" role="button" tabindex="0" aria-controls="demoFileInput">
                 <i data-lucide="upload"></i>
                 <span><strong>เลือกภาพถ่าย</strong><small>JPG หรือ PNG</small></span>
@@ -397,6 +382,7 @@
                 <button class="icon-btn" id="resetDemoBtn" type="button" aria-label="เริ่มกำหนดจุดใหม่"><i data-lucide="rotate-ccw"></i></button>
                 <button class="icon-btn" id="expandLiveWorkspaceBtn" type="button" aria-label="ขยายพื้นที่ภาพ"><i data-lucide="maximize-2"></i></button>
               </div>
+              <button class="btn btn-primary live-process-btn" id="analyzeDemoBtn" type="button" disabled><i data-lucide="calculator"></i><span>ประมวลผลไปยัง Module 1–5</span></button>
               <p id="demoPointError" class="small value danger" role="alert" hidden></p>
 
               <div id="demoVideoContainer" style="display:none">
@@ -442,20 +428,20 @@
           </div>
         </div>
       </section>
+      <div id="liveAnalysisModules" class="analysis-modules" data-analysis-source="live"></div>
     </div>
 
-    <!-- Debug Panel for Automated Self-Tests -->
-    <div id="debugPanel" style="display:none;margin:30px auto;width:min(1200px,calc(100% - 32px));background:#0f1e30;color:#d8e5f5;border-radius:18px;padding:24px;font-family:monospace"></div>
   </main>
 
   <footer style="padding:42px 0 60px;border-top:1px solid var(--line);background:var(--surface);margin-top:60px">
     <div class="container" style="display:flex;justify-content:space-between;gap:30px">
       <div>
-        <strong>LII Lens Lab</strong>
+        <strong>LII Dental Studio</strong>
         <p class="muted small" style="max-width:650px;margin-top:8px">Interactive mathematical proof of concept for a homography-based model and error-bound analysis of Little’s Irregularity Index.</p>
       </div>
     </div>
   </footer>
+
 
 </body>
 </html>

@@ -6,6 +6,7 @@ import {
 import { PRESET_SESSION } from '../core/preset-session-data.js';
 import { validateQuadrilateral } from '../core/homography.js';
 import { fmt } from '../core/math.js';
+import { liveMeasurementStore } from '../core/measurement-store.js';
 import { createImageWorkspace } from '../ui/image-workspace.js';
 import { refreshIcons } from '../ui/icons.js';
 
@@ -15,16 +16,38 @@ let activeStep = 1;
 let cornerPoints = [];
 let dataPoints = [];
 let referencePoints = null;
+let latestResult = null;
+let publishedToModules = false;
+let targetWidth = 6;
+let targetHeight = 6;
+let sampleImageLoaded = false;
 let expanded = false;
+
+function getScaledSampleReference() {
+  if (!sampleImageLoaded) return null;
+  return PRESET_SESSION.referencePoints.map(([x, y]) => [
+    x * targetWidth / 6,
+    y * targetHeight / 6
+  ]);
+}
 
 export function initLiveDemo() {
   const root = document.getElementById('liveImageWorkspace');
   if (!root) return;
 
-  workspace = createImageWorkspace(root, { onPoint: handleWorkspacePoint });
+  workspace = createImageWorkspace(root, {
+    onPoint: handleWorkspacePoint,
+    onMovePoint: handleWorkspacePointMove
+  });
 
   const fileInput = document.getElementById('demoFileInput');
   const uploadArea = document.getElementById('demoUploadArea');
+  const widthInput = document.getElementById('calibrationWidth');
+  const heightInput = document.getElementById('calibrationHeight');
+
+  [widthInput, heightInput].forEach((input) => {
+    input?.addEventListener('input', updateCalibrationSize);
+  });
 
   uploadArea?.addEventListener('click', () => fileInput?.click());
   uploadArea?.addEventListener('keydown', (event) => {
@@ -53,6 +76,7 @@ export function initLiveDemo() {
   document.getElementById('captureCamBtn')?.addEventListener('click', captureCamera);
   document.getElementById('stopCameraBtn')?.addEventListener('click', stopLiveCamera);
   document.getElementById('loadSamplePhotoBtn')?.addEventListener('click', loadSamplePerspectivePhoto);
+  document.getElementById('analyzeDemoBtn')?.addEventListener('click', publishCurrentMeasurement);
   document.getElementById('undoDemoPointBtn')?.addEventListener('click', undoLastPoint);
   document.getElementById('resetDemoBtn')?.addEventListener('click', resetDemoState);
   document.getElementById('expandLiveWorkspaceBtn')?.addEventListener('click', toggleExpanded);
@@ -78,18 +102,31 @@ function loadImageFromFile(file) {
 async function loadWorkspaceImage(src, { sample = false } = {}) {
   try {
     stopLiveCamera();
+    sampleImageLoaded = sample;
+    if (sample) {
+      targetWidth = 6;
+      targetHeight = 6;
+      const widthInput = document.getElementById('calibrationWidth');
+      const heightInput = document.getElementById('calibrationHeight');
+      if (widthInput) widthInput.value = '6';
+      if (heightInput) heightInput.value = '6';
+    } else {
+      if (!readCalibrationSize()) return;
+    }
     const { width, height } = await workspace.setImage(src, sample ? PRESET_SESSION.imageAlt : 'ภาพถ่ายสำหรับวัด LII');
     cornerPoints = [];
     dataPoints = [];
     referencePoints = null;
+    latestResult = null;
+    publishedToModules = false;
     activeStep = 2;
     setPointError('');
     hideResults();
 
     if (sample) {
       cornerPoints = normalizedToPixels(PRESET_SESSION.cornerPointsNormalized, width, height);
-      referencePoints = PRESET_SESSION.referencePoints;
-      dataPoints = projectWorldPoints(cornerPoints, referencePoints);
+      referencePoints = getScaledSampleReference();
+      dataPoints = projectWorldPoints(cornerPoints, referencePoints, targetWidth, targetHeight);
       activeStep = 4;
       computeDemoResults();
     }
@@ -188,17 +225,85 @@ function handleWorkspacePoint(point) {
       computeDemoResults();
     }
   }
+  publishedToModules = false;
+  if (dataPoints.length !== 6) {
+    latestResult = null;
+    hideResults();
+  }
   render();
 }
 
+function handleWorkspacePointMove(index, point, { committed }) {
+  if (!dataPoints[index]) return;
+  dataPoints[index] = point;
+  publishedToModules = false;
+  if (committed && dataPoints.length === 6) computeDemoResults();
+  else render();
+}
+
+function readCalibrationSize() {
+  const width = Number(document.getElementById('calibrationWidth')?.value);
+  const height = Number(document.getElementById('calibrationHeight')?.value);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    setPointError('ขนาด calibration ต้องเป็นตัวเลขที่มากกว่า 0');
+    return false;
+  }
+  targetWidth = width;
+  targetHeight = height;
+  setPointError('');
+  return true;
+}
+
+function updateCalibrationSize() {
+  if (!readCalibrationSize()) {
+    latestResult = null;
+    publishedToModules = false;
+    hideResults();
+    render();
+    return;
+  }
+  referencePoints = getScaledSampleReference();
+  latestResult = null;
+  publishedToModules = false;
+  if (cornerPoints.length === 4 && dataPoints.length === 6) computeDemoResults();
+  else render();
+}
+
 function computeDemoResults() {
+  if (cornerPoints.length !== 4 || dataPoints.length !== 6) return;
   try {
-    const result = calculateCalibration({ corners: cornerPoints, dataPoints, referencePoints });
-    showResults(result);
+    latestResult = calculateCalibration({
+      corners: cornerPoints,
+      dataPoints,
+      referencePoints,
+      targetWidth,
+      targetHeight
+    });
+    showResults(latestResult);
+    render();
   } catch (error) {
+    latestResult = null;
     activeStep = dataPoints.length ? 3 : 2;
     setPointError(`คำนวณ Homography ไม่สำเร็จ: ${error.message}`);
   }
+}
+
+function publishCurrentMeasurement() {
+  if (!latestResult || cornerPoints.length !== 4 || dataPoints.length !== 6) return;
+  liveMeasurementStore.publish({
+    source: 'live',
+    targetWidth,
+    targetHeight,
+    corners: cornerPoints,
+    imagePoints: dataPoints,
+    referencePoints,
+    result: latestResult
+  });
+  publishedToModules = true;
+  render();
+  document.dispatchEvent(new CustomEvent('lii:open-confirmed-analysis', {
+    detail: { source: 'live' }
+  }));
 }
 
 function showResults(result) {
@@ -239,7 +344,9 @@ function showResults(result) {
 function resetDemoState() {
   cornerPoints = [];
   dataPoints = [];
-  referencePoints = null;
+  referencePoints = getScaledSampleReference();
+  latestResult = null;
+  publishedToModules = false;
   activeStep = workspace?.getSize().width ? 2 : 1;
   setPointError('');
   hideResults();
@@ -260,7 +367,9 @@ function undoLastPoint() {
   } else {
     return;
   }
-  referencePoints = null;
+  referencePoints = getScaledSampleReference();
+  latestResult = null;
+  publishedToModules = false;
   hideResults();
   setPointError('');
   render();
@@ -295,7 +404,10 @@ function render() {
     corners: cornerPoints,
     dataPoints,
     showScale: cornerPoints.length === 4,
-    interactiveMode: activeStep === 2 || activeStep === 3
+    scaleWidth: targetWidth,
+    scaleHeight: targetHeight,
+    interactiveMode: activeStep === 2 || activeStep === 3,
+    draggablePoints: dataPoints.length > 0
   });
 
   const dots = [1, 2, 3, 4].map((step) => document.getElementById(`step${step}Dot`));
@@ -310,11 +422,17 @@ function render() {
       1: '1. เลือกภาพถ่ายหรือเปิดกล้อง',
       2: `2. กำหนดมุม C1-C4 (${cornerPoints.length}/4)`,
       3: `3. กำหนดจุดวัด Q1-Q6 (${dataPoints.length}/6)`,
-      4: '4. คำนวณและแสดงผลแล้ว'
+      4: publishedToModules ? '4. Module 1-5 ใช้ Q ชุดล่าสุดแล้ว' : '4. ผลคำนวณอัปเดตตาม Q1-Q6 ล่าสุด'
     };
     hint.textContent = messages[activeStep];
   }
 
   const undo = document.getElementById('undoDemoPointBtn');
   if (undo) undo.disabled = cornerPoints.length === 0 && dataPoints.length === 0;
+
+  const analyze = document.getElementById('analyzeDemoBtn');
+  if (analyze) {
+    analyze.disabled = dataPoints.length !== 6 || !latestResult || publishedToModules;
+    analyze.setAttribute('aria-pressed', String(publishedToModules));
+  }
 }

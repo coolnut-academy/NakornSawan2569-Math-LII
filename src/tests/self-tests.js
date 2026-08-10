@@ -11,6 +11,7 @@ import {
   TARGET_SIZE_CM
 } from '../core/calibration-session.js';
 import { PRESET_FRAMES, PRESET_SESSION } from '../core/preset-session-data.js';
+import { createMeasurementStore } from '../core/measurement-store.js';
 
 function almost(a, b, tol = 1e-6) {
   return Math.abs(a - b) <= tol;
@@ -204,6 +205,71 @@ export function runSelfTests() {
     PRESET_SESSION.referencePoints.length === 6 &&
     PRESET_FRAMES.length === 13 &&
     PRESET_FRAMES.at(-1).result === true);
+
+  test('33 Rectangular calibration recovers points using custom dimensions', () => {
+    const corners = [[80, 60], [920, 120], [850, 620], [110, 680]];
+    const points = [[1, 1], [2.5, 1.4], [4, 2], [5.5, 2.2], [7, 1.6], [9, 1.1]];
+    const imagePoints = projectWorldPoints(corners, points, 10, 4);
+    const result = calculateCalibration({
+      corners,
+      dataPoints: imagePoints,
+      referencePoints: points,
+      targetWidth: 10,
+      targetHeight: 4
+    });
+    return result.targetWidth === 10 && result.targetHeight === 4 &&
+      result.recoveredPoints.every((point, index) =>
+        almost(point[0], points[index][0], 1e-8) && almost(point[1], points[index][1], 1e-8));
+  });
+
+  test('34 Calibration rejects non-positive dimensions', () => {
+    try {
+      calculateCalibration({
+        corners: [[0, 0], [10, 0], [10, 10], [0, 10]],
+        dataPoints: [[1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1]],
+        targetWidth: 0,
+        targetHeight: 4
+      });
+      return false;
+    } catch (error) {
+      return error.message.includes('positive');
+    }
+  });
+
+  test('35 Preset reference remains valid after rectangular rescaling', () => {
+    const corners = [[120, 80], [760, 105], [700, 690], [90, 640]];
+    const imagePoints = projectWorldPoints(corners, PRESET_SESSION.referencePoints, 6, 6);
+    const scaledReference = PRESET_SESSION.referencePoints.map(([x, y]) => [x * 8 / 6, y * 4 / 6]);
+    const result = calculateCalibration({
+      corners,
+      dataPoints: imagePoints,
+      referencePoints: scaledReference,
+      targetWidth: 8,
+      targetHeight: 4
+    });
+    return result.hasKnownReference && result.passed && result.epsilon < 1e-8;
+  });
+
+  test('36 Preset and Live measurement stores remain isolated', () => {
+    const presetStore = createMeasurementStore({ source: 'preset', label: 'Preset' });
+    const liveStore = createMeasurementStore({ source: 'live', label: 'Live Studio' });
+    const corners = [[0, 0], [100, 0], [100, 100], [0, 100]];
+    const points = [[1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1]];
+    const result = calculateCalibration({
+      corners,
+      dataPoints: projectWorldPoints(corners, points),
+      referencePoints: points
+    });
+    presetStore.publish({
+      targetWidth: 6,
+      targetHeight: 6,
+      corners,
+      imagePoints: projectWorldPoints(corners, points),
+      referencePoints: points,
+      result
+    });
+    return presetStore.get()?.source === 'preset' && liveStore.get() === null;
+  });
 
   return tests;
 }
