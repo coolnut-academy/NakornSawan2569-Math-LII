@@ -69,6 +69,7 @@ export function initLiveDemo() {
   if (stopCamBtn) stopCamBtn.addEventListener('click', stopCamera);
   if (resetDemoBtn) resetDemoBtn.addEventListener('click', resetDemoState);
   if (presetSampleBtn) presetSampleBtn.addEventListener('click', loadSamplePerspectivePhoto);
+  if (presetDentalBtn) presetDentalBtn.addEventListener('click', loadSampleDentalModelPhoto);
 
   if (canvas) {
     canvas.addEventListener('pointerdown', (e) => {
@@ -111,18 +112,57 @@ async function startCamera() {
   const videoContainer = document.getElementById('demoVideoContainer');
   const canvas = document.getElementById('demoCanvas');
 
+  // Check secure context / mediaDevices support
+  if (!navigator.mediaDevices && !navigator.getUserMedia && !navigator.webkitGetUserMedia) {
+    alert(
+      '⚠️ ไม่สามารถเปิดกล้องได้:\n\n' +
+      'กล้องใน iOS Safari / Android Chrome ต้องเปิดใช้งานผ่านโปรโตคอล HTTPS หรือ Localhost เท่านั้น\n\n' +
+      'โปรดใช้ปุ่ม "ลากภาพวางที่นี่ หรือคลิกเพื่อเลือกไฟล์" เพื่ออัปโหลดรูปถ่ายแทน'
+    );
+    return;
+  }
+
   try {
-    try {
-      mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
-    } catch (errFallback) {
-      // Fallback for tablets/laptops with single camera or different constraints
-      mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+    let stream = null;
+    const constraintsList = [
+      { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
+      { video: { facingMode: 'environment' } },
+      { video: true }
+    ];
+
+    for (const constraints of constraintsList) {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } else {
+          const legacyGUM = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+          if (legacyGUM) {
+            stream = await new Promise((resolve, reject) => legacyGUM.call(navigator, constraints, resolve, reject));
+          }
+        }
+        if (stream) break;
+      } catch (e) {
+        // Try next fallback constraint
+      }
     }
+
+    if (!stream) {
+      throw new Error('ไม่สามารถเข้าถึงอุปกรณ์กล้องได้ โปรดตรวจสอบการอนุญาตใช้งานกล้อง (Camera Permission) ในการตั้งค่าเบราว์เซอร์ของคุณ');
+    }
+
+    mediaStream = stream;
     if (video) {
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
+      video.setAttribute('muted', 'true');
+      video.muted = true;
       video.srcObject = mediaStream;
-      video.play();
+      
+      try {
+        await video.play();
+      } catch (playErr) {
+        console.warn('Video play auto-resume:', playErr);
+      }
     }
     if (videoContainer) videoContainer.style.display = 'block';
     if (canvas) canvas.style.display = 'none';
@@ -130,7 +170,7 @@ async function startCamera() {
     currentMode = 'camera';
     renderStepUI();
   } catch (err) {
-    alert('Camera access error: ' + err.message + '\nPlease use file upload instead.');
+    alert('📷 การเชื่อมต่อกล้องขัดข้อง:\n' + err.message + '\n\nคำแนะนำ: สามารถใช้การอัปโหลดรูปถ่ายแทนได้ทันที');
   }
 }
 
@@ -174,6 +214,42 @@ function stopCamera() {
   const canvas = document.getElementById('demoCanvas');
   if (videoContainer) videoContainer.style.display = 'none';
   if (canvas) canvas.style.display = 'block';
+}
+
+export function loadSampleDentalModelPhoto() {
+  const img = new Image();
+  img.onload = () => {
+    currentImage = img;
+    stopCamera();
+    
+    // Scale corner points relative to image size
+    const w = img.width;
+    const h = img.height;
+    
+    const imgCorners = [
+      [w * 0.15, h * 0.15],
+      [w * 0.85, h * 0.15],
+      [w * 0.88, h * 0.85],
+      [w * 0.12, h * 0.85]
+    ];
+    
+    const synthDataImg = [
+      [w * 0.25, h * 0.55],
+      [w * 0.35, h * 0.42],
+      [w * 0.50, h * 0.38],
+      [w * 0.65, h * 0.42],
+      [w * 0.75, h * 0.55],
+      [w * 0.85, h * 0.60]
+    ];
+    
+    cornerPoints = imgCorners;
+    dataPoints = synthDataImg;
+    activeStep = 4;
+    redrawCanvas();
+    renderStepUI();
+    computeDemoResults();
+  };
+  img.src = './dental-arch-model.png';
 }
 
 function loadSamplePerspectivePhoto() {
