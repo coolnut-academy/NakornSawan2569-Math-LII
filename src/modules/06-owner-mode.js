@@ -33,11 +33,6 @@ export function initOwnerMode() {
     });
   });
 
-  const printBtn = document.getElementById('printSummary');
-  if (printBtn) {
-    printBtn.addEventListener('click', () => window.print());
-  }
-
   updateOwner();
 }
 

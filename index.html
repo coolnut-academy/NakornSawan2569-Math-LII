@@ -10,9 +10,10 @@
   <!-- KaTeX for Vector Mathematical Typography -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, { delims: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}] });"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}] });"></script>
   
   <link rel="stylesheet" href="./src/style.css" />
+  <link rel="stylesheet" href="./src/redesign.css" />
 </head>
 <body>
   <header class="site-header">
@@ -21,109 +22,113 @@
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M3 16.5 8 11l4 3.5L20.5 6" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="3" cy="16.5" r="1.4" fill="white"/><circle cx="8" cy="11" r="1.4" fill="white"/><circle cx="12" cy="14.5" r="1.4" fill="white"/><circle cx="20.5" cy="6" r="1.4" fill="white"/></svg>
         </span>
-        <span>LII Lens Lab</span>
+        <span class="brand-copy"><strong>LII Lens Lab</strong><small>Homography & Error Bound</small></span>
       </a>
-      <div style="display:flex;align-items:center;gap:10px">
+      <div class="header-actions">
+        <div class="header-mode-switch" aria-label="เลือกโหมดการใช้งาน">
+          <button class="header-mode active" id="tabModePreset" type="button" aria-pressed="true">
+            <i data-lucide="image"></i><span>Preset</span>
+          </button>
+          <button class="header-mode" id="tabModeLive" type="button" aria-pressed="false">
+            <i data-lucide="camera"></i><span>Live Studio</span>
+          </button>
+        </div>
         <button class="theme-toggle-btn" data-theme-toggle aria-label="Toggle dark mode">
           <svg class="theme-icon-sun" style="display:none;width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
           <svg class="theme-icon-moon" style="display:block;width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
-        <span class="nav-pill"><i class="status-dot"></i> Simulated 2D & Live DLT</span>
       </div>
     </div>
+    <nav class="module-nav" id="moduleNav" aria-label="โมดูลการทดลอง">
+      <div class="container module-nav-track">
+        <a href="#preset-workflow">ภาพตัวอย่าง</a>
+        <a href="#lii">LII Builder</a>
+        <a href="#homography">Homography</a>
+        <a href="#bound">Error Bound</a>
+        <a href="#montecarlo">Monte Carlo</a>
+        <a href="#results">18 Conditions</a>
+        <a href="#owner">Owner Mode</a>
+      </div>
+    </nav>
   </header>
 
   <main id="top">
-    <!-- HERO SECTION -->
-    <section class="hero">
-      <div class="container hero-grid">
-        <div class="hero-copy">
-          <div class="kicker">Applied Mathematics • Projective Geometry</div>
-          <h1>วัดระยะจากภาพเอียง<br><span class="soft">เชื่อได้แค่ไหน?</span></h1>
-          <p class="lead">แบบจำลองโฮโมกราฟีสำหรับ Little’s Irregularity Index (LII): จากพิกัดต้นฉบับ → ภาพบิดเบี้ยว → แปลงกลับด้วย \(H^{-1}\) → วิเคราะห์ขอบเขตความคลาดเคลื่อนอย่างเป็นระบบ</p>
-          <div class="hero-stats">
-            <div class="hero-stat"><strong>6 × 3</strong><span>ชุดพิกัด × Homography</span></div>
-            <div class="hero-stat"><strong>18</strong><span>เงื่อนไขหลัก</span></div>
-            <div class="hero-stat"><strong>18,000</strong><span>Monte Carlo trials</span></div>
-          </div>
+    <section class="lab-intro">
+      <div class="container lab-intro-grid">
+        <div>
+          <p class="kicker">Applied Mathematics · Projective Geometry</p>
+          <h1>LII Lens Lab</h1>
+          <p class="lead">ทดลองวัด Little’s Irregularity Index จากภาพถ่าย เรียนรู้ผลของ perspective distortion การแปลงกลับด้วย \(H^{-1}\) และขอบเขตความคลาดเคลื่อน \(10\varepsilon\)</p>
         </div>
-        <div class="visual-shell">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <span style="font-family:var(--mono);font-size:.85rem;color:var(--muted)">\(\tilde{Q} \sim H \tilde{P}\)</span>
-            <span class="badge badge-blue">Signature Equation</span>
-          </div>
-          <div class="formula big" style="margin-bottom:14px">\(|\hat{L} - L_0| \le 10\varepsilon\)</div>
-          <p class="muted small" style="margin:0">สมการขอบเขตความคลาดเคลื่อนหลัก: เมื่อจุดบนระนาบอ้างอิงคลาดเคลื่อนไม่เกิน \(\varepsilon\) ต่อจุด ผลรวมระยะทาง LII ทั้ง 5 ช่วง จะคลาดเคลื่อนไม่เกิน \(10\varepsilon\)</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- DISTINCT MODE SELECTION TAB BAR -->
-    <section class="section compact" style="padding-top:0">
-      <div class="container">
-        <div class="mode-tab-bar">
-          <button class="mode-tab active" id="tabModePreset" type="button">
-            <span class="mode-icon">🎯</span>
-            <div>
-              <strong>Preset Mode (โหมดสาธิตแบบจำลอง)</strong>
-              <span class="mode-sub">วิเคราะห์แบบจำลองคณิตศาสตร์ S1–S6, พิสูจน์ 10ε, Monte Carlo & ดาวน์โหลดแผ่นเป้าหมาย</span>
-            </div>
-          </button>
-          <button class="mode-tab" id="tabModeLive" type="button">
-            <span class="mode-icon">📷</span>
-            <div>
-              <strong>Live Studio Mode (โหมดกล้องถ่ายภาพจริง)</strong>
-              <span class="mode-sub">เปิดกล้องสด / Upload รูปถ่ายแผ่นเป้าหมายบนโต๊ะ เพื่อประมาณค่า DLT สดหน้างาน</span>
-            </div>
-          </button>
+        <div class="intro-equation" aria-label="สมการหลักของโครงการ">
+          <span>ความสัมพันธ์หลัก</span>
+          <strong>\(|\hat{L} - L_0| \le 10\varepsilon\)</strong>
+          <small>Proof of Concept · ไม่ใช่เครื่องมือวินิจฉัย</small>
         </div>
       </div>
     </section>
 
     <!-- ================= VIEW 1: PRESET MODE ================= -->
     <div id="viewPreset">
-      <!-- DENTAL PHOTO SETUP GUIDE CARD -->
-      <section class="section compact" style="padding-bottom:0">
+      <section class="section preset-workflow-section" id="preset-workflow">
         <div class="container">
-          <div class="card card-pad">
-            <div class="target-card-grid">
-              <div>
-                <span class="badge badge-green">Booth Photo Demonstration Guide</span>
-                <h3 style="margin-top:8px;font-size:1.4rem;color:var(--text)">📷 ตัวอย่างการจัดวางและถ่ายภาพโมเดลพิมพ์ฟันจริง</h3>
-                <p class="small muted" style="margin-bottom:12px">ตัวอย่างลักษณะภาพถ่ายที่ถูกต้องสำหรับนำไปใช้สแกนในโหมด Live Studio:</p>
-                <ul class="guide-steps" style="margin-bottom:16px">
-                  <li><strong>วางโมเดลฟันพลาสเตอร์:</strong> วางบนแผ่น Calibration Target (6cm × 6cm Grid)</li>
-                  <li><strong>เห็นมุมกระดาษครบ 4 มุม:</strong> ควรถ่ายภาพให้อยู่ในมุมมองที่เห็นจุดมุม \(C_1, C_2, C_3, C_4\) ชัดเจน</li>
-                  <li><strong>มุมกล้องเอียงได้:</strong> ถ่ายมุมเอียงได้ตั้งแต่ 15° ถึง 45° อัลกอริทึม DLT จะทำการกู้คืนพิกัดระนาบโลกให้อัตโนมัติ</li>
-                </ul>
-                <button class="btn btn-blue btn-sm" id="btnGoToLiveMode" type="button">📷 สลับไปสแกนกล้องสดใน Live Studio Mode</button>
-              </div>
-              <div style="text-align:center">
-                <div id="dentalGuideContainer" class="target-preview-box"></div>
-                <span class="tiny muted" style="display:block;margin-top:6px">ไดอะแกรมตัวอย่างการจัดวางฟันและมุม Calibration Target บนระนาบอ้างอิง</span>
-              </div>
+          <div class="section-title workflow-heading">
+            <div>
+              <div class="eyebrow">Preset workflow</div>
+              <h2>ดูตัวอย่างตั้งแต่ภาพถ่ายจนถึงผลคำนวณ</h2>
+              <p class="lead">ภาพต้นฉบับไม่มีจุดฝังอยู่ในไฟล์ เว็บจะวางจุดสอบเทียบ จุดวัด และสเกลตามลำดับเดียวกับ Live Studio</p>
+            </div>
+            <div class="workflow-state" aria-live="polite">
+              <strong id="presetStageStatus">ภาพต้นฉบับ</strong>
+              <span id="presetStageCounter">1/13</span>
             </div>
           </div>
-        </div>
-      </section>
 
-      <!-- TARGET GENERATOR & DOWNLOAD CARD -->
-      <section class="section compact">
-        <div class="container">
-          <div class="card card-pad" style="border: 1px solid var(--blue); background: var(--surface-2);">
-            <div class="target-card-grid">
-              <div>
-                <span class="badge badge-blue">Printable Calibration Sheet</span>
-                <h3 style="margin-top:8px;font-size:1.4rem;color:var(--text)">📄 แผ่นเป้าหมาย Calibration Target (6cm × 6cm Grid)</h3>
-                <p class="small muted" style="margin-bottom:16px">ใช้สำหรับวางบนโต๊ะเอียงมุมเพื่อเปิดกล้องถ่ายภาพใน Live Mode หรือนำไปทดสอบสอบเทียบระยะ 2D บนระนาบ</p>
-                <div style="display:flex;gap:10px;flex-wrap:wrap">
-                  <button class="btn btn-blue btn-sm" id="btnDownloadTargetSVG" type="button">📥 ดาวน์โหลดแผ่นเป้าหมาย (SVG Vector)</button>
-                  <button class="btn btn-secondary btn-sm" id="btnDownloadTargetPNG" type="button">🖼️ ดาวน์โหลดแผ่นเป้าหมาย (PNG Image)</button>
-                </div>
-              </div>
-              <div id="targetSVGContainer" class="target-preview-box"></div>
+          <div class="workflow-tabs" role="tablist" aria-label="ขั้นตอนตัวอย่าง">
+            <button class="active" data-preset-phase="0" role="tab" aria-selected="true">ภาพต้นฉบับ</button>
+            <button data-preset-phase="1" role="tab" aria-selected="false">Calibration</button>
+            <button data-preset-phase="2" role="tab" aria-selected="false">Scale</button>
+            <button data-preset-phase="3" role="tab" aria-selected="false">จุด LII</button>
+            <button data-preset-phase="4" role="tab" aria-selected="false">ผลลัพธ์</button>
+          </div>
+
+          <div id="presetWorkflowWorkspace"></div>
+
+          <div class="workflow-controls" aria-label="ควบคุมตัวอย่าง">
+            <div class="workflow-controls-primary">
+              <button class="btn btn-primary btn-sm" id="presetPlay" type="button"><i data-lucide="play"></i><span>เล่นตัวอย่าง</span></button>
+              <button class="icon-btn" id="presetPrevious" type="button" aria-label="ขั้นตอนก่อนหน้า" disabled><i data-lucide="chevron-left"></i></button>
+              <button class="icon-btn" id="presetNext" type="button" aria-label="ขั้นตอนถัดไป"><i data-lucide="chevron-right"></i></button>
+              <button class="icon-btn" id="presetReset" type="button" aria-label="เริ่มใหม่"><i data-lucide="rotate-ccw"></i></button>
+              <button class="icon-btn" id="presetToggleOverlay" type="button" aria-label="ซ่อนจุดและเส้น"><i data-lucide="eye-off"></i></button>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="presetGoLive" type="button"><i data-lucide="camera"></i><span>ลองทำเองใน Live Studio</span></button>
+          </div>
+
+          <div class="workflow-results" id="presetWorkflowResults" hidden>
+            <div class="metric"><label>Reference L₀</label><div class="value" id="presetL0">—</div></div>
+            <div class="metric strong"><label>Recovered Lrec</label><div class="value" id="presetLrec">—</div></div>
+            <div class="metric"><label>Max point ε</label><div class="value" id="presetEps">—</div></div>
+            <div class="metric"><label>Bound 10ε</label><div class="value" id="presetBound">—</div></div>
+            <div class="metric"><label>Status</label><div class="value" id="presetResultStatus">—</div></div>
+          </div>
+
+          <div class="academic-callout">
+            <strong>ขอบเขตของตัวอย่าง</strong>
+            <span>ภาพนี้สาธิตการจัดวางและลำดับการทำงาน จุดบนโมเดลฟันเป็นวัตถุ 3 มิติ จึงไม่ใช่หลักฐานยืนยันความแม่นยำทางคลินิก</span>
+          </div>
+
+          <div class="target-download-band">
+            <div>
+              <strong>Calibration Target 6 × 6 cm</strong>
+              <span>ดาวน์โหลดแผ่นเป้าหมายเวกเตอร์สำหรับพิมพ์และทดลองบนระนาบ</span>
+            </div>
+            <div class="target-download-actions">
+              <button class="btn btn-secondary btn-sm" id="btnDownloadTargetSVG" type="button"><i data-lucide="download"></i><span>SVG</span></button>
+              <button class="btn btn-secondary btn-sm" id="btnDownloadTargetPNG" type="button"><i data-lucide="download"></i><span>PNG</span></button>
             </div>
           </div>
+          <div id="targetSVGContainer" hidden></div>
         </div>
       </section>
 
@@ -132,11 +137,11 @@
         <div class="container">
           <div class="section-title">
             <div><div class="eyebrow">Module 01</div><h2>LII Builder</h2><p class="lead">ลากจุดทั้ง 6 จุดแล้วดูว่า “ผลรวมระยะ 5 ช่วง” เปลี่ยนอย่างไรแบบ real time</p></div>
-            <button class="btn btn-secondary btn-sm" data-guide-toggle="guide01" type="button">❓ วิธีใช้งาน</button>
+            <button class="icon-text-btn" data-guide-toggle="guide01" type="button"><i data-lucide="circle-help"></i><span>วิธีใช้งาน</span></button>
           </div>
 
           <div id="guide01" class="guide-box" hidden style="margin-bottom:24px">
-            <h4>📖 วิธีใช้งาน Module 01: LII Builder (ผู้เริ่มต้น)</h4>
+            <h4>วิธีใช้งาน Module 01: LII Builder</h4>
             <ol class="guide-steps">
               <li><strong>แนวคิดหลัก:</strong> ดัชนี LII คือการนำระยะห่างระหว่างจุดที่อยู่ติดกัน 5 ช่วง ($P_1P_2 + P_2P_3 + P_3P_4 + P_4P_5 + P_5P_6$) มาบวกกัน</li>
               <li><strong>ทดลองลากจุด:</strong> ใช้นิ้วหรือเมาส์ลากจุด $P_1$ ถึง $P_6$ บนกราฟ แล้วสังเกตค่า <strong>Live LII</strong> ที่คำนวณสดในกล่องทางขวา</li>
@@ -181,11 +186,11 @@
         <div class="container">
           <div class="section-title">
             <div><div class="eyebrow">Module 02</div><h2>Homography Lab</h2><p class="lead">เปรียบเทียบพิกัดต้นฉบับ ภาพที่ถูกบิด และผลหลังใช้ \(H^{-1}\)</p></div>
-            <button class="btn btn-secondary btn-sm" data-guide-toggle="guide02" type="button">❓ วิธีใช้งาน</button>
+            <button class="icon-text-btn" data-guide-toggle="guide02" type="button"><i data-lucide="circle-help"></i><span>วิธีใช้งาน</span></button>
           </div>
 
           <div id="guide02" class="guide-box" hidden style="margin-bottom:24px">
-            <h4>📖 วิธีใช้งาน Module 02: Homography Lab</h4>
+            <h4>วิธีใช้งาน Module 02: Homography Lab</h4>
             <ol class="guide-steps">
               <li><strong>เปรียบเทียบ 3 รูป:</strong> ดูความแตกต่างระหว่าง <strong>01 Original</strong> (วัตถุจริง) $\rightarrow$ <strong>02 Distorted</strong> (ภาพเอียง $L_{\text{raw}}$) $\rightarrow$ <strong>03 Recovered</strong> (กู้คืนด้วย $H^{-1}$)</li>
               <li><strong>ปรับระดับการเอียง:</strong> ลองเปลี่ยน Homography จาก H1 (เอียงน้อย) เป็น H3 (เอียงมาก) แล้วสังเกตว่าค่า $L_{\text{raw}}$ เพี้ยนไปไกลแค่ไหน</li>
@@ -229,11 +234,11 @@
         <div class="container">
           <div class="section-title">
             <div><div class="eyebrow">Module 03</div><h2>Error Bound Lab</h2><p class="lead">ทดลองกับข้อพิสูจน์หลักของโครงงาน: ถ้าแต่ละจุดคลาดไม่เกิน \(\varepsilon\) แล้ว LII จะคลาดไม่เกิน \(10\varepsilon\)</p></div>
-            <button class="btn btn-secondary btn-sm" data-guide-toggle="guide03" type="button">❓ วิธีใช้งาน</button>
+            <button class="icon-text-btn" data-guide-toggle="guide03" type="button"><i data-lucide="circle-help"></i><span>วิธีใช้งาน</span></button>
           </div>
 
           <div id="guide03" class="guide-box" hidden style="margin-bottom:24px">
-            <h4>📖 วิธีใช้งาน Module 03: Error Bound Lab</h4>
+            <h4>วิธีใช้งาน Module 03: Error Bound Lab</h4>
             <ol class="guide-steps">
               <li><strong>ความหมายของ $\varepsilon$ (Epsilon):</strong> รัศมีวงกลมประสีแดงรอบจุด คือขอบเขตความคลาดเคลื่อนสูงสุดที่จุดนั้นอาจขยับได้</li>
               <li><strong>ทดลองขยับจุด:</strong> กดปุ่ม <em>"สุ่มจุดในวง $\varepsilon$"</em> หรือลากจุดสีแดงด้วยมือ แล้วสังเกตกล่อง <strong>Actual Error</strong> ($|\hat{L} - L_0|$)</li>
@@ -268,11 +273,11 @@
         <div class="container">
           <div class="section-title">
             <div><div class="eyebrow">Module 04</div><h2>Monte Carlo Lab</h2><p class="lead">สุ่ม error ของแต่ละจุดในวงรัศมี \(\varepsilon\) แล้วดู distribution ของ \(|\hat{L} - L_0|\)</p></div>
-            <button class="btn btn-secondary btn-sm" data-guide-toggle="guide04" type="button">❓ วิธีใช้งาน</button>
+            <button class="icon-text-btn" data-guide-toggle="guide04" type="button"><i data-lucide="circle-help"></i><span>วิธีใช้งาน</span></button>
           </div>
 
           <div id="guide04" class="guide-box" hidden style="margin-bottom:24px">
-            <h4>📖 วิธีใช้งาน Module 04: Monte Carlo Lab</h4>
+            <h4>วิธีใช้งาน Module 04: Monte Carlo Lab</h4>
             <ol class="guide-steps">
               <li><strong>หลักการ Monte Carlo:</strong> จำลองสุ่มการคลาดเคลื่อน $1,000 - 18,000$ รอบในเบราว์เซอร์</li>
               <li><strong>เริ่มรัน:</strong> เลือกจำนวนรอบ แล้วกดปุ่ม <em>"Run simulation"</em></li>
@@ -348,102 +353,77 @@
     <div id="viewLive" hidden>
       <section class="section" id="livedemo">
         <div class="container">
-          <div class="section-title">
+          <div class="section-title live-heading">
             <div>
-              <div class="eyebrow">Live Studio Mode • Physical DLT Calibration</div>
-              <h2>📷 ส튜디오สแกนกล้องสด & มาร์กจุด DLT (Live DLT Calibration Studio)</h2>
-              <p class="lead">เปิดกล้องถ่ายภาพจริง หรือ Upload ภาพแผ่น Calibration Target บนโต๊ะ เพื่อประมาณเมทริกซ์ Homography ด้วย 4-point DLT algorithm สดๆ หน้างาน</p>
+              <div class="eyebrow">Live Studio</div>
+              <h2>วัดจากภาพถ่ายของคุณ</h2>
+              <p class="lead">อัปโหลดหรือถ่ายภาพจากด้านบน แล้วกำหนดมุมเป้าสอบเทียบ 4 จุดและจุดวัด 6 จุดตามลำดับ</p>
             </div>
-            <button class="btn btn-secondary btn-sm" data-guide-toggle="guide07" type="button">❓ คู่มือมาร์กจุดบนภาพ</button>
+            <button class="icon-text-btn" data-guide-toggle="guide07" type="button"><i data-lucide="circle-help"></i><span>คู่มือ</span></button>
           </div>
 
-          <!-- Beginner Guide Box for Live Mode -->
-          <div id="guide07" class="guide-box" hidden style="margin-bottom:24px">
-            <h4>📖 คู่มือการทดสอบสแกนวัตถุจริงหน้างาน (Step-by-Step Studio Guide)</h4>
+          <div id="guide07" class="guide-box" hidden>
+            <h4>ลำดับการวัดจากภาพ</h4>
             <ol class="guide-steps">
-              <li><strong>เตรียมภาพทดสอบ:</strong> กดปุ่ม <em>"📷 เปิดกล้องสด"</em> เพื่อถ่ายแผ่นเป้าหมายบนโต๊ะ หรือกด <em>"✨ ใช้ภาพตัวอย่างจำลอง"</em></li>
-              <li><strong>มาร์กจุดอ้างอิง 4 มุม ($C_1 - C_4$):</strong> แตะคลิกมุมแผ่นกระดาษ 4 มุมเรียงตามลำดับ ($C_1 \rightarrow C_2 \rightarrow C_3 \rightarrow C_4$) ระบบจะใช้สมการ $8 \times 8$ คำนวณหาเมทริกซ์ $H_{\text{est}}$</li>
-              <li><strong>มาร์กจุดวัดระยะ ($Q_1 - Q_6$):</strong> แตะคลิกจุดฟันหน้าล่าง 6 จุด ระบบจะใช้เมทริกซ์ผกผัน $H_{\text{est}}^{-1}$ ดึงพิกัดภาพกลับสู่เซนติเมตรโลก</li>
-              <li><strong>อ่านผลสรุป:</strong> ดูค่า $L_{\text{rec}}$ และตรวจสอบสถานะว่าความผิดพลาดจริง $|L̂ - L_0|$ อยู่ในขอบเขต $10\varepsilon$ หรือไม่</li>
+              <li><strong>เลือกภาพ:</strong> ใช้ภาพที่กล้องอยู่เกือบตั้งฉากกับระนาบเป้าสอบเทียบและเห็นกรอบครบทั้ง 4 มุม</li>
+              <li><strong>กำหนด $C_1-C_4$:</strong> แตะมุมกรอบตามเข็มนาฬิกา เริ่มจากซ้ายบน เพื่อประมาณ $H_{\text{est}}$</li>
+              <li><strong>กำหนด $Q_1-Q_6$:</strong> แตะจุดสัมผัสของฟันหน้าล่างจากขวาไปซ้ายให้ครบ 6 จุด</li>
+              <li><strong>อ่านผล:</strong> ระบบรายงาน $L_{\text{rec}}$ ส่วน PASS/FAIL จะแสดงเฉพาะข้อมูลที่มีพิกัดอ้างอิงจริง</li>
             </ol>
           </div>
 
-          <!-- Dental Anatomy Landmark Placement Guide Card -->
-          <div class="card card-pad" style="margin-bottom:24px;border:1px solid var(--blue);background:var(--surface-2)">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-              <span style="font-size:1.5rem">🦷</span>
-              <div>
-                <h3 style="margin:0;color:var(--blue)">คู่มือตำแหน่งการมาร์กจุดบนฟัน 6 จุดตามหลัก LII (Little's Irregularity Index)</h3>
-                <p class="small muted" style="margin:0">การวัด LII ทางทันตกรรมจะนำระยะห่างระหว่างจุดสัมผัส (Contact Points) ของฟันหน้าล่าง 6 จุด ทั้งหมด 5 ช่วงมารวมกัน</p>
-              </div>
-            </div>
-            <div class="grid-3" style="gap:10px">
-              <div class="metric"><label>จุดที่ 1 (\(Q_1\))</label><div style="font-size:.85rem;font-weight:700">ปลาย/ด้านข้างฟันเขี้ยวขวา (Right Canine Contact)</div></div>
-              <div class="metric"><label>จุดที่ 2 (\(Q_2\))</label><div style="font-size:.85rem;font-weight:700">จุดสัมผัสฟันตัดข้างขวา - ฟันตัดกลางขวา</div></div>
-              <div class="metric"><label>จุดที่ 3 (\(Q_3\))</label><div style="font-size:.85rem;font-weight:700">จุดสัมผัสกึ่งกลางฟันตัดกลางขวา - ซ้าย</div></div>
-              <div class="metric"><label>จุดที่ 4 (\(Q_4\))</label><div style="font-size:.85rem;font-weight:700">จุดสัมผัสฟันตัดกลางซ้าย - ฟันตัดข้างซ้าย</div></div>
-              <div class="metric"><label>จุดที่ 5 (\(Q_5\))</label><div style="font-size:.85rem;font-weight:700">จุดสัมผัสฟันตัดข้างซ้าย - ฟันเขี้ยวซ้าย</div></div>
-              <div class="metric"><label>จุดที่ 6 (\(Q_6\))</label><div style="font-size:.85rem;font-weight:700">ปลาย/ด้านข้างฟันเขี้ยวซ้าย (Left Canine Contact)</div></div>
-            </div>
-          </div>
-
-          <div class="grid-2">
-            <div class="card card-pad">
-              <div style="margin-bottom:14px">
+          <div class="live-studio-layout">
+            <div class="live-capture-panel">
+              <div class="live-step-status">
                 <div class="demo-step-dots">
                   <div class="demo-step-dot" id="step1Dot"></div>
                   <div class="demo-step-dot" id="step2Dot"></div>
                   <div class="demo-step-dot" id="step3Dot"></div>
                   <div class="demo-step-dot" id="step4Dot"></div>
                 </div>
-                <p id="demoStepHint" class="small muted" style="margin:0;font-weight:700"></p>
+                <p id="demoStepHint" class="small muted"></p>
               </div>
 
-              <!-- Upload Dropzone -->
-              <div class="upload-area" id="demoUploadArea">
-                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                <strong>ลากภาพวางที่นี่ หรือคลิกเพื่อเลือกไฟล์</strong>
-                <p class="tiny muted" style="margin-top:4px">รองรับ JPG, PNG จากกล้องมือถือ</p>
+              <div class="upload-area" id="demoUploadArea" role="button" tabindex="0" aria-controls="demoFileInput">
+                <i data-lucide="upload"></i>
+                <span><strong>เลือกภาพถ่าย</strong><small>JPG หรือ PNG</small></span>
                 <input type="file" id="demoFileInput" accept="image/*" style="display:none" />
               </div>
 
-              <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
-                <button class="btn btn-blue btn-sm" id="startCameraBtn" type="button">📷 เปิดกล้องสด</button>
-                <button class="btn btn-secondary btn-sm" id="loadSamplePhotoBtn" type="button">✨ โหลดภาพสาธิต</button>
-                <button class="btn btn-secondary btn-sm" id="resetDemoBtn" type="button">Reset</button>
+              <div class="live-actions">
+                <button class="btn btn-primary btn-sm" id="startCameraBtn" type="button"><i data-lucide="camera"></i><span>เปิดกล้อง</span></button>
+                <button class="btn btn-secondary btn-sm" id="loadSamplePhotoBtn" type="button"><i data-lucide="image"></i><span>ใช้ภาพตัวอย่าง</span></button>
+                <button class="icon-btn" id="undoDemoPointBtn" type="button" aria-label="ย้อนจุดล่าสุด" disabled><i data-lucide="undo-2"></i></button>
+                <button class="icon-btn" id="resetDemoBtn" type="button" aria-label="เริ่มกำหนดจุดใหม่"><i data-lucide="rotate-ccw"></i></button>
+                <button class="icon-btn" id="expandLiveWorkspaceBtn" type="button" aria-label="ขยายพื้นที่ภาพ"><i data-lucide="maximize-2"></i></button>
               </div>
+              <p id="demoPointError" class="small value danger" role="alert" hidden></p>
 
-              <!-- Video Stream Container -->
-              <div id="demoVideoContainer" style="display:none;margin-top:14px">
+              <div id="demoVideoContainer" style="display:none">
                 <video id="demoVideo" autoplay playsinline></video>
                 <div class="camera-overlay-actions">
-                  <button class="btn btn-blue btn-sm" id="captureCamBtn" type="button">📸 ถ่ายภาพนี้</button>
+                  <button class="btn btn-primary btn-sm" id="captureCamBtn" type="button"><i data-lucide="camera"></i><span>ถ่ายภาพนี้</span></button>
                   <button class="btn btn-secondary btn-sm" id="stopCameraBtn" type="button">ยกเลิก</button>
                 </div>
               </div>
 
-              <!-- Image Canvas -->
-              <div style="margin-top:14px">
-                <canvas id="demoCanvas"></canvas>
-              </div>
+              <div id="liveImageWorkspace"></div>
             </div>
 
-            <div class="card card-pad">
+            <aside class="live-results-panel">
               <div class="card-head">
                 <div>
-                  <h3>ผลลัพธ์ DLT Homography สด</h3>
-                  <p>เปรียบเทียบพิกัด pixel บนภาพถ่าย กับ พิกัดโลกที่ถูก recover ด้วย \(H^{-1}\)</p>
+                  <h3>ผลการคำนวณ</h3>
+                  <p>พิกัดโลกที่กู้คืนด้วย \(H^{-1}\)</p>
                 </div>
               </div>
 
               <div id="demoResultsBox" style="display:none">
-                <div class="grid-3" style="margin-bottom:16px">
-                  <div class="metric"><label>Reference \(L_0\)</label><div class="value" id="demoL0">—</div></div>
+                <div id="demoValidationNote" class="note"></div>
+                <div class="live-result-grid">
+                  <div class="metric"><label>Known reference \(L_0\)</label><div class="value" id="demoL0">—</div></div>
                   <div class="metric strong"><label>Recovered \(L_{\text{rec}}\)</label><div class="value" id="demoLrec">—</div></div>
                   <div class="metric"><label>Max Point \(\varepsilon\)</label><div class="value" id="demoEps">—</div></div>
-                </div>
-
-                <div class="grid-3" style="margin-bottom:16px">
                   <div class="metric"><label>Actual Error \(|\hat{L}-L_0|\)</label><div class="value" id="demoActualE">—</div></div>
                   <div class="metric"><label>Bound \(10\varepsilon\)</label><div class="value" id="demoBound">—</div></div>
                   <div class="metric"><label>Theorem Status</label><div class="value" id="demoStatus">—</div></div>
@@ -455,10 +435,10 @@
                 </div>
               </div>
 
-              <div class="note" style="margin-top:18px">
-                <strong>ข้อควรระวังทางวิชาการ:</strong> การทดลองนี้เป็น Live Demonstration ของคณิตศาสตร์ DLT จากภาพถ่ายจำลอง ไม่ใช่งานวิจัยคลินิกทางทันตกรรมจริง
+              <div class="note live-limit-note">
+                <strong>ข้อควรระวังทางวิชาการ:</strong> Homography นี้สมมติว่าจุดสอบเทียบและจุดวัดอยู่บนระนาบเดียวกัน การทดลองเป็น Live Demonstration ของคณิตศาสตร์ DLT ไม่ใช่เครื่องมือวัดวัตถุ 3 มิติหรือผลงานวิจัยคลินิกทางทันตกรรม
               </div>
-            </div>
+            </aside>
           </div>
         </div>
       </section>

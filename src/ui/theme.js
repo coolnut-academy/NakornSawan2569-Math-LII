@@ -3,7 +3,12 @@
 const THEME_KEY = 'lii_lens_lab_theme';
 
 export function initTheme() {
-  const saved = localStorage.getItem(THEME_KEY);
+  let saved = null;
+  try {
+    saved = localStorage.getItem(THEME_KEY);
+  } catch {
+    // Storage can be unavailable in private or embedded browser contexts.
+  }
   if (saved === 'dark' || saved === 'light') {
     setTheme(saved);
   } else {
@@ -23,7 +28,11 @@ export function initTheme() {
 
 export function setTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem(THEME_KEY, theme);
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    // Theme switching should still work when persistence is blocked.
+  }
   updateToggleIcons(theme);
 }
 

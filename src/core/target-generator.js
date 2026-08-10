@@ -132,7 +132,7 @@ export function generateTargetSVG(width = 600, height = 600) {
 
   // Polyline for Points
   const pointsString = s3Points
-    .map((p) => `${60 + p[0] * 80},${540 - p[1] * 80}`)
+    .map((p) => `${60 + p[0] * 80},${60 + p[1] * 80}`)
     .join(' ');
 
   const poly = document.createElementNS(svgNS, 'polyline');
@@ -145,7 +145,7 @@ export function generateTargetSVG(width = 600, height = 600) {
   // Draw Point Circles P1..P6
   s3Points.forEach((p, idx) => {
     const px = 60 + p[0] * 80;
-    const py = 540 - p[1] * 80;
+    const py = 60 + p[1] * 80;
 
     const g = document.createElementNS(svgNS, 'g');
     const pt = document.createElementNS(svgNS, 'circle');

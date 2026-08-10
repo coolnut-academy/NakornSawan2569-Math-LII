@@ -1,9 +1,16 @@
-// Comprehensive Self-Test Suite (25+ tests) verifying mathematical integrity & Blueprint compliance
+// Self-test suite for the mathematical core and the shared photo-calibration workflow.
 
 import { DATASETS, HOMOGRAPHIES, REFERENCE_LII, DET_TARGET, PUBLISHED } from '../core/data.js';
 import { distance, lii, ae, re, mulberry32, randomInDisk } from '../core/math.js';
 import { determinant3, inverse3, matMul } from '../core/matrix.js';
-import { transformPoints, estimateHomography } from '../core/homography.js';
+import { transformPoints, estimateHomography, validateQuadrilateral } from '../core/homography.js';
+import {
+  calculateCalibration,
+  normalizedToPixels,
+  projectWorldPoints,
+  TARGET_SIZE_CM
+} from '../core/calibration-session.js';
+import { PRESET_FRAMES, PRESET_SESSION } from '../core/preset-session-data.js';
 
 function almost(a, b, tol = 1e-6) {
   return Math.abs(a - b) <= tol;
@@ -145,6 +152,58 @@ export function runSelfTests() {
   test('25 Published results table validation (18 conditions)', () => {
     return Object.keys(PUBLISHED).length === 18;
   });
+
+  test('26 Calibration quadrilateral accepts ordered convex corners', () =>
+    validateQuadrilateral([[10, 10], [190, 20], [180, 180], [20, 190]]).ok);
+
+  test('27 Calibration quadrilateral rejects crossing corner order', () =>
+    !validateQuadrilateral([[10, 10], [180, 180], [190, 20], [20, 190]]).ok);
+
+  test('28 Live sample target recovers the known S3 world coordinates', () => {
+    const worldCorners = [[0, 0], [6, 0], [6, 6], [0, 6]];
+    const imageCorners = [[80, 80], [720, 80], [720, 720], [80, 720]];
+    const worldPoints = [
+      [0, 3], [1.2, 3.1], [2.35, 3.65], [3.65, 2.45], [4.8, 2.9], [6, 3]
+    ];
+    const imagePoints = worldPoints.map(([x, y]) => [80 + x * (640 / 6), 80 + y * (640 / 6)]);
+    const H = estimateHomography(worldCorners, imageCorners);
+    const recovered = transformPoints(imagePoints, inverse3(H));
+    return recovered.every((p, i) =>
+      almost(p[0], worldPoints[i][0], 1e-8) && almost(p[1], worldPoints[i][1], 1e-8)
+    );
+  });
+
+  test('29 Normalized preset coordinates map to image pixels', () => {
+    const result = normalizedToPixels([[0.25, 0.5], [1, 1]], 800, 600);
+    return result[0][0] === 200 && result[0][1] === 300 &&
+      result[1][0] === 800 && result[1][1] === 600;
+  });
+
+  test('30 Shared calibration session recovers projected reference points', () => {
+    const corners = [[120, 80], [760, 105], [700, 690], [90, 640]];
+    const imagePoints = projectWorldPoints(corners, PRESET_SESSION.referencePoints);
+    const result = calculateCalibration({
+      corners,
+      dataPoints: imagePoints,
+      referencePoints: PRESET_SESSION.referencePoints
+    });
+    return result.hasKnownReference && result.passed &&
+      almost(result.recoveredLii, result.referenceLii, 1e-8) && result.epsilon < 1e-8;
+  });
+
+  test('31 Uploaded-photo session does not invent reference validation', () => {
+    const corners = [[100, 100], [700, 100], [700, 700], [100, 700]];
+    const imagePoints = projectWorldPoints(corners, PRESET_SESSION.referencePoints);
+    const result = calculateCalibration({ corners, dataPoints: imagePoints });
+    return !result.hasKnownReference && result.referenceLii === undefined && result.passed === undefined;
+  });
+
+  test('32 Preset workflow defines 6 cm target and complete staged sequence', () =>
+    TARGET_SIZE_CM === 6 &&
+    PRESET_SESSION.cornerPointsNormalized.length === 4 &&
+    PRESET_SESSION.referencePoints.length === 6 &&
+    PRESET_FRAMES.length === 13 &&
+    PRESET_FRAMES.at(-1).result === true);
 
   return tests;
 }

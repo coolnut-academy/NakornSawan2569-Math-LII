@@ -1,6 +1,3 @@
-/* ========================= FONT LOADING ========================= */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+Thai:wght@400;600;700;800;900&display=swap');
-
 /* ========================= CSS DESIGN SYSTEM & TOKENS ========================= */
 :root {
   --bg: #f6f8fb;
@@ -67,7 +64,7 @@
 }
 
 html, body {
-  overflow-x: hidden;
+  overflow-x: clip;
   max-width: 100vw;
   width: 100%;
   margin: 0;
@@ -111,6 +108,12 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+  transform: none;
+}
+
 img, svg, canvas {
   max-width: 100%;
   display: block;
@@ -123,14 +126,14 @@ h1, h2, h3, p {
 h1 {
   font-size: clamp(2.5rem, 7vw, 5.8rem);
   line-height: .96;
-  letter-spacing: -.055em;
+  letter-spacing: 0;
   margin-bottom: 1.2rem;
 }
 
 h2 {
   font-size: clamp(1.8rem, 4vw, 3.15rem);
   line-height: 1.08;
-  letter-spacing: -.035em;
+  letter-spacing: 0;
   margin-bottom: .75rem;
 }
 
@@ -152,6 +155,15 @@ section {
 .container {
   width: min(var(--max), calc(100% - 28px));
   margin-inline: auto;
+}
+
+.container, .hero-grid > *, .grid-2 > *, .grid-3 > *, .grid-4 > *,
+.triple > *, .target-card-grid > *, .mode-tab > div {
+  min-width: 0;
+}
+
+h1, h2, h3, .lead, .mode-tab, .mode-sub, .btn {
+  overflow-wrap: anywhere;
 }
 
 .section {
@@ -245,7 +257,7 @@ section {
   gap: 12px;
   text-decoration: none;
   font-weight: 900;
-  letter-spacing: -.02em;
+  letter-spacing: 0;
 }
 
 .brand-mark {
@@ -429,7 +441,7 @@ section {
 
 .hero-stat strong {
   font-size: 1.28rem;
-  letter-spacing: -.03em;
+  letter-spacing: 0;
 }
 
 .hero-stat span {
@@ -490,7 +502,7 @@ section {
   color: var(--muted);
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .07em;
+  letter-spacing: 0;
   margin-bottom: 4px;
 }
 
@@ -498,7 +510,7 @@ section {
   font-family: var(--mono);
   font-weight: 850;
   font-size: 1.18rem;
-  letter-spacing: -.03em;
+  letter-spacing: 0;
 }
 
 .metric .sub {
@@ -688,6 +700,7 @@ td.num { text-align: right; font-family: var(--mono); }
   color: var(--muted);
   text-align: left;
   transition: all 0.2s ease;
+  min-width: 0;
 }
 
 .mode-tab:hover {
@@ -705,6 +718,7 @@ td.num { text-align: right; font-family: var(--mono); }
 .mode-icon {
   font-size: 1.6rem;
   line-height: 1;
+  flex: 0 0 auto;
 }
 
 .mode-sub {
@@ -958,7 +972,8 @@ td.num { text-align: right; font-family: var(--mono); }
     justify-content: center;
   }
   .hero-copy h1 {
-    font-size: clamp(2rem, 10vw, 3.2rem);
+    font-size: 2.15rem;
+    line-height: 1.08;
   }
   h2 {
     font-size: clamp(1.5rem, 6vw, 2.4rem);
@@ -976,7 +991,23 @@ td.num { text-align: right; font-family: var(--mono); }
     width: 100%;
   }
   .hero-stats {
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .hero-stat strong {
+    font-size: 1.08rem;
+  }
+  .hero-stat span {
+    font-size: .7rem;
+  }
+  .visual-shell > div:first-child {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .mode-tab {
+    align-items: flex-start;
+    padding: 12px;
   }
   .coord-table-wrap {
     font-size: .78rem;
@@ -1008,7 +1039,7 @@ td.num { text-align: right; font-family: var(--mono); }
 /* ========================= RESPONSIVE DESIGN (SMALL PHONE ≤400px) ========================= */
 @media (max-width: 400px) {
   .hero-copy h1 {
-    font-size: 1.9rem;
+    font-size: 1.85rem;
   }
   .card-pad {
     padding: 12px;
@@ -1075,8 +1106,12 @@ td.num { text-align: right; font-family: var(--mono); }
   white-space: nowrap;
 }
 
-.plot, #demoCanvas {
+#demoCanvas {
   touch-action: manipulation;
+}
+
+.plot {
+  touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }
 

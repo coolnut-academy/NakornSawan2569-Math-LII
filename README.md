@@ -2,9 +2,9 @@
 
 > **Mathematical Proof of Concept for Little’s Irregularity Index (LII) under Homography Distortion and 10-Epsilon Error Bound Verification**
 
-[![Build Status](https://img.shields.io/badge/Build-Vite%205-blue.svg)](https://vitejs.dev/)
+[![Build Status](https://img.shields.io/badge/Build-Vite%208-blue.svg)](https://vite.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Self--Tests-25%2F25%20Passed-brightgreen.svg)](#-automated-self-test-suite)
+[![Tests](https://img.shields.io/badge/Self--Tests-32%2F32%20Passed-brightgreen.svg)](#-automated-self-test-suite)
 
 ---
 
@@ -25,9 +25,9 @@ $$\left| \hat{L} - L_0 \right| \le 10\varepsilon$$
 
 แอปพลิเคชันแบ่งเป็น 2 โหมดหลักอย่างชัดเจนผ่านแถบสลับด้านบน:
 
-1. **🎯 Preset Mode (โหมดสาธิตแบบจำลอง):**
-   - รวมการวิเคราะห์แบบจำลองคณิตศาสตร์ $S_1-S_6$, $10\varepsilon$ Error Bound, Monte Carlo $18,000$ รอบ, และตาราง 18 เงื่อนไข
-   - แสดงตัวอย่างแผ่น Calibration Target (6×6 cm) ในรูปแบบ **Pure Dynamic Vector SVG** พร้อมปุ่มดาวน์โหลดไฟล์ SVG และ PNG ได้แบบ 100% Instant Blob Download
+1. **Preset Mode (โหมดสาธิตจากภาพถ่าย):**
+   - ใช้ภาพถ่าย top-side view ที่ไม่มีจุดฝังอยู่ในไฟล์ แล้ววาง overlay แบบ SVG จากเว็บตามลำดับ $C_1-C_4$, สเกล 6×6 cm, $Q_1-Q_6$ และผลคำนวณ
+   - ใช้ calibration pipeline เดียวกับ Live Studio และรวมแบบจำลอง $S_1-S_6$, Error Bound, Monte Carlo และตาราง 18 เงื่อนไขไว้ในโหมดเดียวกัน
 
 2. **📷 Live Studio Mode (โหมดกล้องถ่ายภาพจริง):**
    - ส튜디오สำหรับเปิดกล้องถ่ายภาพจริง หรือ Upload รูปถ่ายแผ่นเป้าหมายบนโต๊ะ
@@ -41,9 +41,10 @@ $$\left| \hat{L} - L_0 \right| \le 10\varepsilon$$
 
 ### 🧰 Tech Stack
 - **Core Framework:** HTML5 + ES6 Modules (Vanilla JavaScript)
-- **Build Tool:** [Vite 5](https://vitejs.dev/) (Lightning fast HMR & Static Bundler)
+- **Build Tool:** [Vite 8](https://vite.dev/) (HMR and static production bundling)
 - **Styling:** Custom CSS Design System (CSS Custom Properties, Dark Mode Tokens, Responsive Grid)
-- **Typography:** Google Fonts (Inter + Noto Sans Thai)
+- **Typography:** Self-hosted IBM Plex Sans Thai + IBM Plex Mono
+- **Icons:** Lucide
 - **Deployment:** GitHub Pages / Any Static Web Server (`base: './'`)
 
 ### 🏗️ โครงสร้างไฟล์ในระบบ (Directory Architecture)
@@ -57,17 +58,23 @@ NakornSawan2569-Math-LII/
 ├── src/
 │   ├── main.js                  # Application Bootstrap & Module Loader
 │   ├── style.css                # CSS Design System + Dark Mode Tokens + Mobile Styles
+│   ├── redesign.css             # Professional UI overrides and image-workspace layout
 │   ├── core/                    # Engine ทางคณิตศาสตร์หลัก (Math Core)
+│   │   ├── calibration-session.js # Shared Preset/Live calibration pipeline
+│   │   ├── preset-session-data.js # Preset image, points and staged frames
 │   │   ├── math.js              # Vector/Scalar Math, LII, Euclidean Distance, PRNG (mulberry32)
 │   │   ├── matrix.js            # 3x3 Determinant, Matrix Inverse, Gaussian Elimination Solver
 │   │   ├── homography.js        # Point Transformations & 4-Point DLT Homography Estimation
 │   │   └── data.js              # Canonical Datasets (S1-S6), Homography Matrices (H1-H3), Published Results
 │   ├── ui/                      # UI Visualization Renderers
+│   │   ├── image-workspace.js   # Photo layer + dynamic SVG overlay renderer
+│   │   ├── icons.js             # Lucide icon registry
 │   │   ├── svg-renderer.js      # Interactive 2D Vector Plotting Engine
 │   │   ├── drag.js              # Touch & Pointer Drag Interaction Handlers
 │   │   ├── histogram.js         # Canvas Monte Carlo Error Distribution Renderer
 │   │   └── theme.js             # Light / Dark Mode Toggle & State Management
-│   ├── modules/                 # Interactive Application Modules (01 - 07)
+│   ├── modules/                 # Interactive Application Modules (00 - 07)
+│   │   ├── 00-preset-workflow.js # Staged photo-calibration demonstration
 │   │   ├── 01-lii-builder.js    # Module 01: Interactive LII Builder
 │   │   ├── 02-homography-lab.js # Module 02: Homography Distortion & Inverse Recovery Lab
 │   │   ├── 03-error-bound.js    # Module 03: 10-Epsilon Interactive Proof
@@ -76,7 +83,8 @@ NakornSawan2569-Math-LII/
 │   │   ├── 06-owner-mode.js     # Module 06: Academic Presentation Q&A & Claim Guardrails
 │   │   └── 07-live-demo.js      # Module 07: Live Camera / Photo DLT Homography Calibration (Physical Demo)
 │   └── tests/
-│       └── self-tests.js        # Automated Test Suite (25 Tests)
+│       ├── self-tests.js        # Automated Test Suite (32 Tests)
+│       └── run-tests.js         # Node.js test runner
 └── dist/                        # Production Ready Static Bundle
 ```
 
@@ -88,11 +96,12 @@ NakornSawan2569-Math-LII/
 
 ### 📷 Module 07: Live Physical Demo (สแกนภาพถ่ายจริงหน้างาน)
 โมดูลสำหรับเปิดกล้องถ่ายภาพกระดาษ Calibration Target จริงบนโต๊ะเพื่อทดสอบอัลกอริทึม DLT สดๆ
+> ขอบเขตการใช้งาน: Homography สมมติว่าจุดสอบเทียบและจุดวัดอยู่บนระนาบเดียวกัน จึงไม่ใช่เครื่องมือวัดพื้นผิววัตถุ 3 มิติหรือเครื่องมือวินิจฉัย
 1. **เตรียมแผ่น Calibration Target (6×6 cm):** วางแผ่นพิมพ์เป้าหมายบนโต๊ะในมุมเอียงตามต้องการ (หรือกดปุ่ม **✨ ใช้ภาพตัวอย่างจำลอง**)
 2. **นำเข้าภาพถ่าย:** กด **📷 เปิดกล้องสด** (ระบบจะเลือกกล้องหลังให้อัตโนมัติบนมือถือ) หรือเลือกไฟล์ภาพถ่ายจากเครื่อง
 3. **มาร์กจุดอ้างอิง 4 มุม ($C_1 - C_4$):** แตะมาร์กมุมกระดาษ 4 มุมเรียงตามลำดับ ระบบจะใช้ **4-point Direct Linear Transform (DLT)** สร้างเมทริกซ์ Homography $H_{est}$
 4. **มาร์กจุดวัดระยะ ($Q_1 - Q_6$):** แตะมาร์กจุดฟันทั้ง 6 จุดบนภาพถ่าย
-5. **ดูผลลัพธ์ย้อนพิกัด $H_{est}^{-1}$:** ระบบจะใช้ $H_{est}^{-1}$ แปลงพิกัดภาพพิกเซลกลับสู่พิกัดโลก $P̂_1 - P̂_6$ คำนวณ $L_{rec}$ และตรวจสอบขอบเขต $|L̂ - L_0| \le 10\varepsilon$ ให้ทันที
+5. **ดูผลลัพธ์ย้อนพิกัด $H_{est}^{-1}$:** ระบบจะใช้ $H_{est}^{-1}$ แปลงพิกัดภาพพิกเซลกลับสู่พิกัดโลก $P̂_1 - P̂_6$ และคำนวณ $L_{rec}$ สำหรับภาพตัวอย่างที่รู้พิกัด S3 ระบบจึงจะตรวจสอบขอบเขต $|L̂ - L_0| \le 10\varepsilon$ ได้ ส่วนภาพที่ผู้ใช้อัปโหลดจะแสดงผลเป็น measurement only เพราะไม่มี ground truth สำหรับคำนวณ $\varepsilon$
 
 ### 📏 Module 01: LII Builder
 - เลือกชุดพิกัดมาตรฐาน $S_1 - S_6$ หรือใช้เมาส์/นิ้วลากจุด $P_1 - P_6$ บนระนาบอ้างอิง $2\text{D}$
@@ -138,11 +147,11 @@ npm run dev
 
 ### 2. การรันชุดทดสอบอัตโนมัติ (Automated Self-Tests)
 
-ระบบมีชุดทดสอบ 25 ข้อ ครอบคลุม Determinant, Matrix Inverse, DLT Homography estimation, และ Error bound:
+ระบบมีชุดทดสอบ 32 ข้อ ครอบคลุม Determinant, Matrix Inverse, DLT Homography estimation, Error bound และ shared Preset/Live calibration session:
 
 ```bash
 # รันผ่าน Node.js ใน Terminal
-node -e "import('./src/tests/self-tests.js').then(m => console.log(m.runSelfTests()))"
+npm test
 ```
 
 หรือเปิดหน้าเว็บแล้วเติม Query parameter `?debug=1` เช่น: `http://localhost:5173/?debug=1`
