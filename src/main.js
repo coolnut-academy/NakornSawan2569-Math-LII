@@ -61,6 +61,26 @@ document.addEventListener('DOMContentLoaded', () => {
   if (tabPreset) tabPreset.addEventListener('click', () => switchMode('preset'));
   if (tabLive) tabLive.addEventListener('click', () => switchMode('live'));
 
+  // Bind All Navigation Anchor Links for Auto Mode Switch + Smooth Scroll
+  document.querySelectorAll('a[href^="#"]').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      const targetId = link.getAttribute('href').substring(1);
+      if (!targetId || targetId === 'top') return;
+
+      e.preventDefault();
+      if (targetId === 'livedemo') {
+        switchMode('live');
+      } else {
+        switchMode('preset');
+      }
+
+      setTimeout(() => {
+        const sec = document.getElementById(targetId);
+        if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+    });
+  });
+
   function triggerPresetDemo() {
     switchMode('preset');
 

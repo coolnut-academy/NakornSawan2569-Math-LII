@@ -40,6 +40,7 @@ export function initLiveDemo() {
   const stopCamBtn = document.getElementById('stopCameraBtn');
   const resetDemoBtn = document.getElementById('resetDemoBtn');
   const presetSampleBtn = document.getElementById('loadSamplePhotoBtn');
+  const presetDentalBtn = document.getElementById('loadSampleDentalBtn');
 
   const canvas = document.getElementById('demoCanvas');
 
