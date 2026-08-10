@@ -7,6 +7,7 @@ import { initReproduce18 } from './modules/05-reproduce-18.js';
 import { initOwnerMode } from './modules/06-owner-mode.js';
 import { initLiveDemo, loadSampleDentalModelPhoto } from './modules/07-live-demo.js';
 import { runSelfTests } from './tests/self-tests.js';
+import { generateTargetSVG, downloadTargetSVG, downloadTargetPNG } from './core/target-generator.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize Theme System
@@ -21,7 +22,48 @@ document.addEventListener('DOMContentLoaded', () => {
   initOwnerMode();
   initLiveDemo();
 
+  // Render Vector Target Preview on Page
+  const targetBox = document.getElementById('targetSVGContainer');
+  if (targetBox) {
+    targetBox.appendChild(generateTargetSVG(320, 320));
+  }
+
+  // Bind Target Downloader Buttons
+  const btnSvg = document.getElementById('btnDownloadTargetSVG');
+  const btnPng = document.getElementById('btnDownloadTargetPNG');
+
+  if (btnSvg) btnSvg.addEventListener('click', downloadTargetSVG);
+  if (btnPng) btnPng.addEventListener('click', downloadTargetPNG);
+
+  // Bind Mode Switcher Tabs
+  const tabPreset = document.getElementById('tabModePreset');
+  const tabLive = document.getElementById('tabModeLive');
+  const viewPreset = document.getElementById('viewPreset');
+  const viewLive = document.getElementById('viewLive');
+
+  const btnGoLive = document.getElementById('btnGoToLiveMode');
+  if (btnGoLive) btnGoLive.addEventListener('click', () => switchMode('live'));
+
+  function switchMode(mode) {
+    if (mode === 'preset') {
+      if (tabPreset) tabPreset.classList.add('active');
+      if (tabLive) tabLive.classList.remove('active');
+      if (viewPreset) viewPreset.hidden = false;
+      if (viewLive) viewLive.hidden = true;
+    } else if (mode === 'live') {
+      if (tabLive) tabLive.classList.add('active');
+      if (tabPreset) tabPreset.classList.remove('active');
+      if (viewLive) viewLive.hidden = false;
+      if (viewPreset) viewPreset.hidden = true;
+    }
+  }
+
+  if (tabPreset) tabPreset.addEventListener('click', () => switchMode('preset'));
+  if (tabLive) tabLive.addEventListener('click', () => switchMode('live'));
+
   function triggerPresetDemo() {
+    switchMode('preset');
+
     // 1. Open all beginner guides
     document.querySelectorAll('.guide-box').forEach((box) => {
       box.hidden = false;
@@ -36,11 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // 2. Pre-load dental cast model photo & compute DLT
-    loadSampleDentalModelPhoto();
-
-    // 3. Smooth scroll to Live Demo
-    const sec = document.getElementById('livedemo');
+    // 2. Smooth scroll to Module 01
+    const sec = document.getElementById('lii');
     if (sec) sec.scrollIntoView({ behavior: 'smooth' });
   }
 

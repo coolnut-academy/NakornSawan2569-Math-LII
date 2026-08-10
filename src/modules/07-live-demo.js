@@ -2,6 +2,7 @@
 import { estimateHomography, applyHomography } from '../core/homography.js';
 import { inverse3 } from '../core/matrix.js';
 import { lii, distance, fmt, ae, re } from '../core/math.js';
+import { generateTargetSVG } from '../core/target-generator.js';
 
 // Default World Coordinates for Calibration Target (6cm x 6cm Square)
 const WORLD_CORNERS = [
@@ -217,30 +218,43 @@ function stopCamera() {
 }
 
 export function loadSampleDentalModelPhoto() {
+  // Generate high quality calibration target image on the fly
+  const svg = generateTargetSVG(800, 800);
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(svg);
+  const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+
   const img = new Image();
   img.onload = () => {
     currentImage = img;
     stopCamera();
     
-    // Scale corner points relative to image size
     const w = img.width;
     const h = img.height;
     
+    // Exact 4 corner locations C1..C4 on generated target (Margin 60, Box 480)
     const imgCorners = [
-      [w * 0.15, h * 0.15],
-      [w * 0.85, h * 0.15],
-      [w * 0.88, h * 0.85],
-      [w * 0.12, h * 0.85]
+      [w * (60 / 600), h * (60 / 600)],   // C1 (0,0)
+      [w * (540 / 600), h * (60 / 600)],  // C2 (6,0)
+      [w * (540 / 600), h * (540 / 600)], // C3 (6,6)
+      [w * (60 / 600), h * (540 / 600)]   // C4 (0,6)
     ];
     
-    const synthDataImg = [
-      [w * 0.25, h * 0.55],
-      [w * 0.35, h * 0.42],
-      [w * 0.50, h * 0.38],
-      [w * 0.65, h * 0.42],
-      [w * 0.75, h * 0.55],
-      [w * 0.85, h * 0.60]
+    // S3 Points mapped onto target sheet
+    const s3Raw = [
+      [0.0, 3.0],
+      [1.2, 3.1],
+      [2.35, 3.65],
+      [3.65, 2.45],
+      [4.8, 2.9],
+      [6.0, 3.0]
     ];
+    
+    const synthDataImg = s3Raw.map((p) => [
+      w * ((60 + p[0] * 80) / 600),
+      h * ((540 - p[1] * 80) / 600)
+    ]);
     
     cornerPoints = imgCorners;
     dataPoints = synthDataImg;
@@ -248,86 +262,13 @@ export function loadSampleDentalModelPhoto() {
     redrawCanvas();
     renderStepUI();
     computeDemoResults();
+    URL.revokeObjectURL(url);
   };
-  img.src = './dental-arch-model.png';
+  img.src = url;
 }
 
 function loadSamplePerspectivePhoto() {
-  // Create a synthetic distorted calibration target photo on a canvas
-  const canvas = document.createElement('canvas');
-  canvas.width = 800;
-  canvas.height = 600;
-  const ctx = canvas.getContext('2d');
-
-  // Background wooden table effect
-  const grad = ctx.createLinearGradient(0, 0, 800, 600);
-  grad.addColorStop(0, '#f1f5f9');
-  grad.addColorStop(1, '#e2e8f0');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 800, 600);
-
-  // Perspective transformed quad corners on image
-  const imgCorners = [
-    [180, 140], // C1 Top-Left
-    [620, 100], // C2 Top-Right
-    [680, 480], // C3 Bottom-Right
-    [120, 440]  // C4 Bottom-Left
-  ];
-
-  // Draw paper target quad
-  ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = '#94a3b8';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(imgCorners[0][0], imgCorners[0][1]);
-  ctx.lineTo(imgCorners[1][0], imgCorners[1][1]);
-  ctx.lineTo(imgCorners[2][0], imgCorners[2][1]);
-  ctx.lineTo(imgCorners[3][0], imgCorners[3][1]);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // Calculate homography H from world (0..6) to this distorted image quad
-  const H_synth = estimateHomography(WORLD_CORNERS, imgCorners);
-  const synthDataImg = WORLD_DATA_REF.map((p) => applyHomography(p, H_synth));
-
-  // Draw 4 Corner Checkerboard indicators
-  imgCorners.forEach((p, idx) => {
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath();
-    ctx.arc(p[0], p[1], 10, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillText(`C${idx + 1}`, p[0] - 8, p[1] - 14);
-  });
-
-  // Draw 6 data point circles on synthetic photo
-  synthDataImg.forEach((p, idx) => {
-    ctx.fillStyle = '#2563eb';
-    ctx.beginPath();
-    ctx.arc(p[0], p[1], 6, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = '#1e293b';
-    ctx.font = 'bold 11px sans-serif';
-    ctx.fillText(`P${idx + 1}`, p[0] + 8, p[1] + 4);
-  });
-
-  const img = new Image();
-  img.onload = () => {
-    currentImage = img;
-    // Pre-populate corners & data points for instant demo delight
-    cornerPoints = imgCorners.map((p) => [...p]);
-    dataPoints = synthDataImg.map((p) => [...p]);
-    activeStep = 4; // Auto compute results!
-    redrawCanvas();
-    renderStepUI();
-    computeDemoResults();
-  };
-  img.src = canvas.toDataURL('image/png');
+  loadSampleDentalModelPhoto();
 }
 
 function handleCanvasClick(e) {

@@ -21,6 +21,18 @@ $$\left| \hat{L} - L_0 \right| \le 10\varepsilon$$
 > **⚠️ ข้อควรระวังทางวิชาการ (Claim Guardrails):**
 > โครงการนี้เป็นเพียง **Mathematical Proof of Concept** บนตัวแบบคณิตศาสตร์ $2\text{D}$ ไม่ใช่โปรแกรมตรวจวินิจฉัยทางการแพทย์ทางคลินิกจริง (Not a clinical diagnostic tool)
 
+## 🎯 การแยกโหมดใช้งานชัดเจน (Dual Mode Architecture)
+
+แอปพลิเคชันแบ่งเป็น 2 โหมดหลักอย่างชัดเจนผ่านแถบสลับด้านบน:
+
+1. **🎯 Preset Mode (โหมดสาธิตแบบจำลอง):**
+   - รวมการวิเคราะห์แบบจำลองคณิตศาสตร์ $S_1-S_6$, $10\varepsilon$ Error Bound, Monte Carlo $18,000$ รอบ, และตาราง 18 เงื่อนไข
+   - แสดงตัวอย่างแผ่น Calibration Target (6×6 cm) ในรูปแบบ **Pure Dynamic Vector SVG** พร้อมปุ่มดาวน์โหลดไฟล์ SVG และ PNG ได้แบบ 100% Instant Blob Download
+
+2. **📷 Live Studio Mode (โหมดกล้องถ่ายภาพจริง):**
+   - ส튜디오สำหรับเปิดกล้องถ่ายภาพจริง หรือ Upload รูปถ่ายแผ่นเป้าหมายบนโต๊ะ
+   - ระบบคำนวณ 4-Point DLT, ย้อนพิกัด $H_{est}^{-1}$ และประมวลผลความคลาดเคลื่อนสดหน้างาน
+
 ---
 
 ## 🛠️ เทคโนโลยีและสถาปัตยกรรม (Tech Stack & Architecture)
