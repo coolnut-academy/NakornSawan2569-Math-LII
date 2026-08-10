@@ -183,6 +183,135 @@ export function generateTargetSVG(width = 600, height = 600) {
   return svg;
 }
 
+export function generateDentalGuideSVG(width = 600, height = 450) {
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', '0 0 600 450');
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
+  svg.setAttribute('xmlns', svgNS);
+  svg.setAttribute('style', 'background: #ffffff; font-family: system-ui, sans-serif; border-radius: 12px;');
+
+  // Background Paper
+  const bg = document.createElementNS(svgNS, 'rect');
+  bg.setAttribute('width', '600');
+  bg.setAttribute('height', '450');
+  bg.setAttribute('fill', '#ffffff');
+  svg.appendChild(bg);
+
+  // Outer Grid Box 6cm x 6cm (Margin 40, Width 370)
+  const box = document.createElementNS(svgNS, 'rect');
+  box.setAttribute('x', '115');
+  box.setAttribute('y', '40');
+  box.setAttribute('width', '370');
+  box.setAttribute('height', '370');
+  box.setAttribute('fill', '#f8fafc');
+  box.setAttribute('stroke', '#0f172a');
+  box.setAttribute('stroke-width', '2.5');
+  svg.appendChild(box);
+
+  // Grid Lines
+  for (let i = 1; i < 6; i++) {
+    const x = 115 + i * (370 / 6);
+    const y = 40 + i * (370 / 6);
+
+    const vline = document.createElementNS(svgNS, 'line');
+    vline.setAttribute('x1', x); vline.setAttribute('y1', 40);
+    vline.setAttribute('x2', x); vline.setAttribute('y2', 410);
+    vline.setAttribute('stroke', '#e2e8f0'); vline.setAttribute('stroke-width', '1.5');
+    vline.setAttribute('stroke-dasharray', '3 3');
+    svg.appendChild(vline);
+
+    const hline = document.createElementNS(svgNS, 'line');
+    hline.setAttribute('x1', 115); hline.setAttribute('y1', y);
+    hline.setAttribute('x2', 485); hline.setAttribute('y2', y);
+    hline.setAttribute('stroke', '#e2e8f0'); hline.setAttribute('stroke-width', '1.5');
+    hline.setAttribute('stroke-dasharray', '3 3');
+    svg.appendChild(hline);
+  }
+
+  // Draw Dental Arch Model Shape (Plaster Cast Teeth Curve)
+  const arch = document.createElementNS(svgNS, 'path');
+  arch.setAttribute('d', 'M 145 350 Q 170 190 300 135 Q 430 190 455 350');
+  arch.setAttribute('fill', 'none');
+  arch.setAttribute('stroke', '#cbd5e1');
+  arch.setAttribute('stroke-width', '22');
+  arch.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(arch);
+
+  // Teeth Contact Segments (Incisors & Canines)
+  const teethContacts = [
+    { x: 175, y: 310, label: 'P1 (Canine R)' },
+    { x: 215, y: 230, label: 'P2 (Lat R)' },
+    { x: 265, y: 175, label: 'P3 (Cent R)' },
+    { x: 335, y: 175, label: 'P4 (Cent L)' },
+    { x: 385, y: 230, label: 'P5 (Lat L)' },
+    { x: 425, y: 310, label: 'P6 (Canine L)' }
+  ];
+
+  // Draw Connecting LII Polyline
+  const ptsStr = teethContacts.map(p => `${p.x},${p.y}`).join(' ');
+  const poly = document.createElementNS(svgNS, 'polyline');
+  poly.setAttribute('points', ptsStr);
+  poly.setAttribute('fill', 'none');
+  poly.setAttribute('stroke', '#2563eb');
+  poly.setAttribute('stroke-width', '3');
+  svg.appendChild(poly);
+
+  // Draw 4 Corner Targets C1..C4
+  const corners = [
+    { x: 115, y: 40, label: 'C1' },
+    { x: 485, y: 40, label: 'C2' },
+    { x: 485, y: 410, label: 'C3' },
+    { x: 115, y: 410, label: 'C4' }
+  ];
+
+  corners.forEach(c => {
+    const circ = document.createElementNS(svgNS, 'circle');
+    circ.setAttribute('cx', c.x); circ.setAttribute('cy', c.y);
+    circ.setAttribute('r', '14'); circ.setAttribute('fill', '#ef4444');
+    circ.setAttribute('stroke', '#ffffff'); circ.setAttribute('stroke-width', '2');
+    svg.appendChild(circ);
+
+    const txt = document.createElementNS(svgNS, 'text');
+    txt.setAttribute('x', c.x + (c.x < 300 ? -22 : 22));
+    txt.setAttribute('y', c.y + (c.y < 200 ? -12 : 22));
+    txt.setAttribute('text-anchor', 'middle');
+    txt.setAttribute('font-size', '12'); txt.setAttribute('font-weight', 'bold');
+    txt.setAttribute('fill', '#ef4444');
+    txt.textContent = c.label;
+    svg.appendChild(txt);
+  });
+
+  // Draw Teeth Contact Points P1..P6
+  teethContacts.forEach((p, i) => {
+    const pt = document.createElementNS(svgNS, 'circle');
+    pt.setAttribute('cx', p.x); pt.setAttribute('cy', p.y);
+    pt.setAttribute('r', '8'); pt.setAttribute('fill', '#2563eb');
+    pt.setAttribute('stroke', '#ffffff'); pt.setAttribute('stroke-width', '2');
+    svg.appendChild(pt);
+
+    const txt = document.createElementNS(svgNS, 'text');
+    txt.setAttribute('x', p.x + (i < 3 ? -14 : 14));
+    txt.setAttribute('y', p.y + 4);
+    txt.setAttribute('text-anchor', i < 3 ? 'end' : 'start');
+    txt.setAttribute('font-size', '12'); txt.setAttribute('font-weight', 'bold');
+    txt.setAttribute('fill', '#0f172a');
+    txt.textContent = `P${i + 1}`;
+    svg.appendChild(txt);
+  });
+
+  // Diagram Header Title
+  const title = document.createElementNS(svgNS, 'text');
+  title.setAttribute('x', '300'); title.setAttribute('y', '24');
+  title.setAttribute('text-anchor', 'middle'); title.setAttribute('font-size', '13');
+  title.setAttribute('font-weight', 'bold'); title.setAttribute('fill', '#0f172a');
+  title.textContent = 'DENTAL ARCH MODEL LANDMARK PLACEMENT (P1 – P6)';
+  svg.appendChild(title);
+
+  return svg;
+}
+
 export function downloadTargetSVG() {
   const svg = generateTargetSVG(1200, 1200);
   const serializer = new XMLSerializer();

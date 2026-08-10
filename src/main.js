@@ -7,7 +7,7 @@ import { initReproduce18 } from './modules/05-reproduce-18.js';
 import { initOwnerMode } from './modules/06-owner-mode.js';
 import { initLiveDemo, loadSampleDentalModelPhoto } from './modules/07-live-demo.js';
 import { runSelfTests } from './tests/self-tests.js';
-import { generateTargetSVG, downloadTargetSVG, downloadTargetPNG } from './core/target-generator.js';
+import { generateTargetSVG, generateDentalGuideSVG, downloadTargetSVG, downloadTargetPNG } from './core/target-generator.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize Theme System
@@ -22,10 +22,15 @@ document.addEventListener('DOMContentLoaded', () => {
   initOwnerMode();
   initLiveDemo();
 
-  // Render Vector Target Preview on Page
+  // Render Vector Target Preview & Dental Guide Preview on Page
   const targetBox = document.getElementById('targetSVGContainer');
   if (targetBox) {
     targetBox.appendChild(generateTargetSVG(320, 320));
+  }
+
+  const dentalGuideBox = document.getElementById('dentalGuideContainer');
+  if (dentalGuideBox) {
+    dentalGuideBox.appendChild(generateDentalGuideSVG(380, 285));
   }
 
   // Bind Target Downloader Buttons
