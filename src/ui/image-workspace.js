@@ -104,17 +104,38 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
   function setImage(src, alt = '') {
     empty.hidden = true;
     image.alt = alt;
+    const filename = src.split('/').pop() || src;
+    const candidates = [
+      src,
+      `./${filename}`,
+      `./public/${filename}`,
+      `./src/assets/${filename}`,
+      `/${filename}`
+    ];
+    const uniqueCandidates = [...new Set(candidates.filter(Boolean))];
+
     return new Promise((resolve, reject) => {
-      image.onload = () => {
-        width = image.naturalWidth;
-        height = image.naturalHeight;
-        media.style.aspectRatio = `${width} / ${height}`;
-        overlay.setAttribute('viewBox', `0 0 ${width} ${height}`);
-        overlay.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-        resolve({ width, height });
-      };
-      image.onerror = () => reject(new Error('Unable to load workspace image.'));
-      image.src = src;
+      let index = 0;
+      function tryNext() {
+        if (index >= uniqueCandidates.length) {
+          reject(new Error(`Unable to load workspace image (${filename}).`));
+          return;
+        }
+        const currentUrl = uniqueCandidates[index++];
+        image.onload = () => {
+          width = image.naturalWidth;
+          height = image.naturalHeight;
+          media.style.aspectRatio = `${width} / ${height}`;
+          overlay.setAttribute('viewBox', `0 0 ${width} ${height}`);
+          overlay.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+          resolve({ width, height });
+        };
+        image.onerror = () => {
+          tryNext();
+        };
+        image.src = currentUrl;
+      }
+      tryNext();
     });
   }
 
