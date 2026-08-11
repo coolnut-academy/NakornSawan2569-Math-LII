@@ -10,7 +10,7 @@ import {
   projectWorldPoints,
   TARGET_SIZE_CM
 } from '../core/calibration-session.js';
-import { PRESET_FRAMES, PRESET_SESSION } from '../core/preset-session-data.js';
+import { PRESET_PHASES, PRESET_SESSION } from '../core/preset-session-data.js';
 import { createMeasurementStore } from '../core/measurement-store.js';
 
 function almost(a, b, tol = 1e-6) {
@@ -203,8 +203,7 @@ export function runSelfTests() {
     TARGET_SIZE_CM === 6 &&
     PRESET_SESSION.cornerPointsNormalized.length === 4 &&
     PRESET_SESSION.referencePoints.length === 6 &&
-    PRESET_FRAMES.length === 13 &&
-    PRESET_FRAMES.at(-1).result === true);
+    PRESET_PHASES.length === 6);
 
   test('33 Rectangular calibration recovers points using custom dimensions', () => {
     const corners = [[80, 60], [920, 120], [850, 620], [110, 680]];

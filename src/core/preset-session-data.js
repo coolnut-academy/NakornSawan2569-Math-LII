@@ -1,11 +1,19 @@
 export const PRESET_SESSION = {
-  imageSrc: new URL('../assets/preset-dental-guide-v3-top-down.png', import.meta.url).href,
-  imageAlt: 'ภาพถ่ายมุมบนของโมเดลฟันล่างบนแผ่นสอบเทียบ',
+  imageSrc: './preset-dental-guide.png',
+  imageAlt: 'ภาพถ่าย Top-Down ของโมเดลฟันล่างบนแผ่นสอบเทียบ 6x6cm',
+  tiltedImageSrc: './preset-dental-guide-tilted.png',
+  tiltedImageAlt: 'ภาพถ่ายมุมเอียง (Tilted View) ของโมเดลฟันล่างบนแผ่นสอบเทียบ 6x6cm',
   cornerPointsNormalized: [
-    [0.208, 0.136],
-    [0.774, 0.136],
-    [0.774, 0.81],
-    [0.208, 0.81]
+    [0.18, 0.20],
+    [0.82, 0.20],
+    [0.82, 0.82],
+    [0.18, 0.82]
+  ],
+  tiltedCornerPointsNormalized: [
+    [0.14, 0.23],
+    [0.86, 0.23],
+    [0.91, 0.87],
+    [0.07, 0.87]
   ],
   referencePoints: [
     [1.45, 4.38],
@@ -17,26 +25,12 @@ export const PRESET_SESSION = {
   ]
 };
 
-export const PRESET_FRAMES = [
-  { phase: 0, corners: 0, points: 0, scale: false, result: false },
-  { phase: 1, corners: 1, points: 0, scale: false, result: false },
-  { phase: 1, corners: 2, points: 0, scale: false, result: false },
-  { phase: 1, corners: 3, points: 0, scale: false, result: false },
-  { phase: 1, corners: 4, points: 0, scale: false, result: false },
-  { phase: 2, corners: 4, points: 0, scale: true, result: false },
-  { phase: 3, corners: 4, points: 1, scale: true, result: false },
-  { phase: 3, corners: 4, points: 2, scale: true, result: false },
-  { phase: 3, corners: 4, points: 3, scale: true, result: false },
-  { phase: 3, corners: 4, points: 4, scale: true, result: false },
-  { phase: 3, corners: 4, points: 5, scale: true, result: false },
-  { phase: 3, corners: 4, points: 6, scale: true, result: false },
-  { phase: 4, corners: 4, points: 6, scale: true, result: true }
+export const PRESET_PHASES = [
+  { id: 1, name: ' Top-Down: จุดสอบเทียบ (C1-C4)' },
+  { id: 2, name: ' Top-Down: จุดอ้างอิง (P1-P6)' },
+  { id: 3, name: ' บันทึกจุดอ้างอิง P' },
+  { id: 4, name: ' Tilted: ภาพเอียง & C1-C4' },
+  { id: 5, name: ' Tilted: กำหนดจุด Q1-Q6' },
+  { id: 6, name: ' ประมวลผลไปยัง Module 1–5' }
 ];
 
-export const PRESET_PHASE_LABELS = [
-  'ภาพต้นฉบับ',
-  'จุดสอบเทียบ',
-  'กำหนดสเกล',
-  'จุดวัด LII',
-  'ผลการคำนวณ'
-];

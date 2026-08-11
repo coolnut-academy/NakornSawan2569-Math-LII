@@ -134,6 +134,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
     const {
       corners = [],
       dataPoints = [],
+      shadowPoints = [],
       cornerCount = corners.length,
       pointCount = dataPoints.length,
       showScale = false,
@@ -141,7 +142,9 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
       scaleWidth = 6,
       scaleHeight = 6,
       interactiveMode = false,
-      draggablePoints = false
+      draggablePoints = false,
+      pointPrefix = 'Q',
+      shadowPrefix = 'P'
     } = options;
     overlay.innerHTML = '';
     overlay.toggleAttribute('hidden', !showOverlay);
@@ -270,6 +273,46 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
       overlay.appendChild(group);
     });
 
+    // Render Shadow Points (if any)
+    if (shadowPoints.length > 0) {
+      if (shadowPoints.length > 1) {
+        overlay.appendChild(svgNode('polyline', {
+          points: pointString(shadowPoints),
+          class: 'shadow-line'
+        }));
+      }
+      shadowPoints.forEach((point, index) => {
+        const group = svgNode('g', { class: 'shadow-point', role: 'img' });
+        group.setAttribute('aria-label', `${shadowPrefix}${index + 1} shadow point`);
+        group.appendChild(svgNode('circle', {
+          cx: point[0], cy: point[1], r: pointRadius * 1.2, class: 'shadow-point-halo'
+        }));
+        group.appendChild(svgNode('circle', {
+          cx: point[0], cy: point[1], r: pointRadius * 0.7, class: 'shadow-point-core'
+        }));
+        const placements = [
+          { dx: -labelGap, dy: -labelGap * 0.7, anchor: 'end' },
+          { dx: 0, dy: -labelGap * 1.35, anchor: 'middle' },
+          { dx: 0, dy: labelGap * 1.65, anchor: 'middle' },
+          { dx: 0, dy: labelGap * 1.65, anchor: 'middle' },
+          { dx: 0, dy: -labelGap * 1.35, anchor: 'middle' },
+          { dx: labelGap, dy: -labelGap * 0.7, anchor: 'start' }
+        ];
+        const placement = placements[index % placements.length];
+        const label = svgNode('text', {
+          x: point[0] + placement.dx,
+          y: point[1] + placement.dy,
+          class: 'overlay-label shadow-label',
+          'font-size': measurementFontSize * 0.9,
+          'text-anchor': placement.anchor
+        });
+        label.textContent = `${shadowPrefix}${index + 1}`;
+        group.appendChild(label);
+        overlay.appendChild(group);
+      });
+    }
+
+    // Render Active Measurement Points
     if (visiblePoints.length > 1) {
       overlay.appendChild(svgNode('polyline', {
         points: pointString(visiblePoints),
@@ -284,9 +327,9 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
         role: 'img',
         'data-point-index': index
       });
-      group.setAttribute('aria-label', `Q${index + 1} measurement point; drag or use arrow keys to adjust`);
+      group.setAttribute('aria-label', `${pointPrefix}${index + 1} measurement point; drag or use arrow keys to adjust`);
       const title = svgNode('title');
-      title.textContent = `Q${index + 1}: drag to adjust`;
+      title.textContent = `${pointPrefix}${index + 1}: drag to adjust`;
       group.appendChild(title);
       group.appendChild(svgNode('circle', {
         cx: point[0], cy: point[1], r: pointRadius * 2, class: 'point-hit-target'
@@ -313,7 +356,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
         'font-size': measurementFontSize,
         'text-anchor': placement.anchor
       });
-      label.textContent = `Q${index + 1}`;
+      label.textContent = `${pointPrefix}${index + 1}`;
       group.appendChild(label);
       overlay.appendChild(group);
     });

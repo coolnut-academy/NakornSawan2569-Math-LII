@@ -1,198 +1,360 @@
 import { calculateCalibration, normalizedToPixels, projectWorldPoints } from '../core/calibration-session.js';
-import { PRESET_FRAMES, PRESET_PHASE_LABELS, PRESET_SESSION } from '../core/preset-session-data.js';
-import { fmt } from '../core/math.js';
+import { PRESET_SESSION, PRESET_PHASES } from '../core/preset-session-data.js';
+import { estimateHomography, applyHomography, validateQuadrilateral } from '../core/homography.js';
+import { inverse3 } from '../core/matrix.js';
+import { createWorldCorners } from '../core/calibration-session.js';
+import { fmt, lii } from '../core/math.js';
 import { presetMeasurementStore } from '../core/measurement-store.js';
 import { createImageWorkspace } from '../ui/image-workspace.js';
+import { createRealtimeCalcPanel } from '../ui/realtime-calc-display.js';
 import { refreshIcons } from '../ui/icons.js';
-
-const PHASE_FRAME = [0, 1, 5, 6, 12];
 
 export function initPresetWorkflow({ onGoLive } = {}) {
   const root = document.getElementById('presetWorkflowWorkspace');
   if (!root) return;
 
-  const workspace = createImageWorkspace(root, { onMovePoint: handleMovePoint });
-  let frameIndex = 0;
-  let corners = [];
-  let dataPoints = [];
+  const workspace = createImageWorkspace(root, {
+    onPoint: handleWorkspacePoint,
+    onMovePoint: handleWorkspacePointMove
+  });
+
+  const calcPanel = createRealtimeCalcPanel('presetRealtimeCalcContainer');
+
+  // Workflow State
+  let currentPhase = 1; // 1 to 6
+  let topImageLoaded = false;
+  let tiltedImageLoaded = false;
+
+  // Top-Down state
+  let topCorners = [];
+  let pPixelPoints = [];
+  let pWorldPoints = [];
+
+  // Tilted state
+  let tiltedCorners = [];
+  let qPixelPoints = [];
+
+  // Analysis result
   let result = null;
   let published = false;
-  let timer = null;
+
+  // Buttons & DOM elements
+  const statusElem = document.getElementById('presetStageStatus');
+  const counterElem = document.getElementById('presetStageCounter');
+  const stepBar = document.getElementById('presetStepBar');
+  const actionBtn = document.getElementById('presetActionBtn');
+  const prevBtn = document.getElementById('presetPrevBtn');
+  const resetBtn = document.getElementById('presetReset');
+  const overlayBtn = document.getElementById('presetToggleOverlay');
+  const liveBtn = document.getElementById('presetGoLive');
+  const tiltedFileInput = document.getElementById('presetTiltedFileInput');
+  const uploadArea = document.getElementById('presetTiltedUploadArea');
+  const resultsBox = document.getElementById('presetWorkflowResults');
+
   let overlayVisible = true;
 
-  const previousButton = document.getElementById('presetPrevious');
-  const nextButton = document.getElementById('presetNext');
-  const playButton = document.getElementById('presetPlay');
-  const resetButton = document.getElementById('presetReset');
-  const overlayButton = document.getElementById('presetToggleOverlay');
-  const analyzeButton = document.getElementById('presetAnalyze');
-  const liveButton = document.getElementById('presetGoLive');
+  // Load Top-Down Image Initially
+  loadTopDownImage();
 
-  workspace.setImage(PRESET_SESSION.imageSrc, PRESET_SESSION.imageAlt).then(({ width, height }) => {
-    corners = normalizedToPixels(PRESET_SESSION.cornerPointsNormalized, width, height);
-    dataPoints = projectWorldPoints(corners, PRESET_SESSION.referencePoints);
-    result = calculateCalibration({
-      corners,
-      dataPoints,
-      referencePoints: PRESET_SESSION.referencePoints
+  function loadTopDownImage() {
+    workspace.setImage(PRESET_SESSION.imageSrc, PRESET_SESSION.imageAlt).then(({ width, height }) => {
+      topCorners = normalizedToPixels(PRESET_SESSION.cornerPointsNormalized, width, height);
+      pPixelPoints = projectWorldPoints(topCorners, PRESET_SESSION.referencePoints);
+      topImageLoaded = true;
+      tiltedImageLoaded = false;
+      currentPhase = 1;
+      published = false;
+      render();
     });
-    render();
-  });
+  }
 
-  previousButton?.addEventListener('click', () => setFrame(frameIndex - 1));
-  nextButton?.addEventListener('click', () => setFrame(frameIndex + 1));
-  resetButton?.addEventListener('click', resetWorkflow);
-  analyzeButton?.addEventListener('click', confirmMeasurement);
-  liveButton?.addEventListener('click', () => onGoLive?.());
-  overlayButton?.addEventListener('click', () => {
-    overlayVisible = !overlayVisible;
-    overlayButton.dataset.icon = overlayVisible ? 'eye-off' : 'eye';
-    overlayButton.setAttribute('aria-label', overlayVisible ? 'ซ่อนจุดและเส้น' : 'แสดงจุดและเส้น');
-    overlayButton.innerHTML = `<i data-lucide="${overlayVisible ? 'eye-off' : 'eye'}"></i>`;
-    render();
-    refreshIcons(overlayButton);
-  });
+  function loadTiltedImage(src, alt = PRESET_SESSION.tiltedImageAlt) {
+    return workspace.setImage(src, alt).then(({ width, height }) => {
+      tiltedCorners = normalizedToPixels(PRESET_SESSION.tiltedCornerPointsNormalized, width, height);
+      qPixelPoints = [...pPixelPoints];
+      tiltedImageLoaded = true;
+      published = false;
+      render();
+    });
+  }
 
-  playButton?.addEventListener('click', () => {
-    if (timer) {
-      stopPlayback();
-      return;
-    }
-    if (frameIndex === PRESET_FRAMES.length - 1) frameIndex = 0;
-    playButton.innerHTML = '<i data-lucide="pause"></i><span>หยุด</span>';
-    refreshIcons(playButton);
-    timer = window.setInterval(() => {
-      if (frameIndex >= PRESET_FRAMES.length - 1) {
-        stopPlayback();
-        return;
+  // File Upload for Tilted Image (Phase 4+)
+  if (tiltedFileInput) {
+    tiltedFileInput.addEventListener('change', (e) => {
+      const [file] = e.target.files || [];
+      if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = () => loadTiltedImage(reader.result, file.name);
+        reader.readAsDataURL(file);
       }
-      setFrame(frameIndex + 1, false);
-    }, 700);
-  });
-
-  document.querySelectorAll('[data-preset-phase]').forEach((button) => {
-    button.addEventListener('click', () => {
-      stopPlayback();
-      setFrame(PHASE_FRAME[Number(button.dataset.presetPhase)] || 0, false);
     });
-  });
+  }
 
-  function handleMovePoint(index, point, { committed }) {
-    dataPoints[index] = point;
-    published = false;
-    if (committed) {
-      result = calculateCalibration({
-        corners,
-        dataPoints,
-        referencePoints: PRESET_SESSION.referencePoints
-      });
+  if (uploadArea) {
+    uploadArea.addEventListener('click', () => tiltedFileInput?.click());
+  }
+
+  // Handlers
+  function handleWorkspacePoint(point) {
+    if (currentPhase === 1 && topCorners.length < 4) {
+      topCorners.push(point);
+      if (topCorners.length === 4) {
+        const v = validateQuadrilateral(topCorners);
+        if (!v.ok) topCorners.pop();
+        else {
+          pPixelPoints = projectWorldPoints(topCorners, PRESET_SESSION.referencePoints);
+        }
+      }
+    } else if (currentPhase === 2 && pPixelPoints.length < 6) {
+      pPixelPoints.push(point);
+    } else if (currentPhase === 4 && tiltedCorners.length < 4) {
+      tiltedCorners.push(point);
+      if (tiltedCorners.length === 4) {
+        const v = validateQuadrilateral(tiltedCorners);
+        if (!v.ok) tiltedCorners.pop();
+      }
+    } else if (currentPhase === 5 && qPixelPoints.length < 6) {
+      qPixelPoints.push(point);
     }
     render();
   }
 
+  function handleWorkspacePointMove(index, point, { committed }) {
+    if (currentPhase <= 3) {
+      if (pPixelPoints[index]) pPixelPoints[index] = point;
+    } else {
+      if (qPixelPoints[index]) qPixelPoints[index] = point;
+    }
+    render();
+  }
+
+  // Calculate World Points for P (Top-Down)
+  function computePWorldPoints() {
+    if (topCorners.length !== 4 || pPixelPoints.length !== 6) return [];
+    try {
+      const H = estimateHomography(createWorldCorners(6, 6), topCorners);
+      const Hinv = inverse3(H);
+      return pPixelPoints.map(pt => applyHomography(pt, Hinv));
+    } catch {
+      return [];
+    }
+  }
+
+  // Calculate World Points for Q (Tilted)
+  function computeQWorldPoints() {
+    if (tiltedCorners.length !== 4 || qPixelPoints.length !== 6) return [];
+    try {
+      const H = estimateHomography(createWorldCorners(6, 6), tiltedCorners);
+      const Hinv = inverse3(H);
+      return qPixelPoints.map(pt => applyHomography(pt, Hinv));
+    } catch {
+      return [];
+    }
+  }
+
+  // Event Listeners for Workflow Actions
+  actionBtn?.addEventListener('click', () => {
+    if (currentPhase === 1) {
+      if (topCorners.length === 4) setPhase(2);
+    } else if (currentPhase === 2) {
+      if (pPixelPoints.length === 6) setPhase(3);
+    } else if (currentPhase === 3) {
+      // Confirm & Save Reference
+      pWorldPoints = computePWorldPoints();
+      loadTiltedImage(PRESET_SESSION.tiltedImageSrc).then(() => {
+        setPhase(4);
+      });
+    } else if (currentPhase === 4) {
+      if (tiltedCorners.length === 4) setPhase(5);
+    } else if (currentPhase === 5) {
+      // Process to Modules 01-05
+      confirmMeasurement();
+    }
+  });
+
+  prevBtn?.addEventListener('click', () => {
+    if (currentPhase === 4) {
+      // Back to Top-Down
+      workspace.setImage(PRESET_SESSION.imageSrc, PRESET_SESSION.imageAlt).then(() => {
+        tiltedImageLoaded = false;
+        setPhase(2);
+      });
+    } else if (currentPhase > 1) {
+      setPhase(currentPhase - 1);
+    }
+  });
+
+  resetBtn?.addEventListener('click', () => {
+    loadTopDownImage();
+  });
+
+  overlayBtn?.addEventListener('click', () => {
+    overlayVisible = !overlayVisible;
+    overlayBtn.innerHTML = `<i data-lucide="${overlayVisible ? 'eye-off' : 'eye'}"></i>`;
+    render();
+    refreshIcons(overlayBtn);
+  });
+
+  liveBtn?.addEventListener('click', () => onGoLive?.());
+
+  function setPhase(phase) {
+    currentPhase = phase;
+    render();
+  }
+
   function confirmMeasurement() {
-    if (!result || dataPoints.length !== 6 || corners.length !== 4) return;
+    pWorldPoints = computePWorldPoints();
+    const qWorld = computeQWorldPoints();
+    if (tiltedCorners.length !== 4 || qPixelPoints.length !== 6 || pWorldPoints.length !== 6) return;
+
+    result = calculateCalibration({
+      corners: tiltedCorners,
+      dataPoints: qPixelPoints,
+      referencePoints: pWorldPoints,
+      targetWidth: 6,
+      targetHeight: 6
+    });
+
     presetMeasurementStore.publish({
       source: 'preset',
       targetWidth: 6,
       targetHeight: 6,
-      corners,
-      imagePoints: dataPoints,
-      referencePoints: PRESET_SESSION.referencePoints,
+      corners: tiltedCorners,
+      imagePoints: qPixelPoints,
+      referencePoints: pWorldPoints,
       result
     });
+
     published = true;
-    frameIndex = PRESET_FRAMES.length - 1;
+    currentPhase = 6;
     render();
+
     document.dispatchEvent(new CustomEvent('lii:open-confirmed-analysis', {
       detail: { source: 'preset' }
     }));
   }
 
-  function resetWorkflow() {
-    stopPlayback();
-    dataPoints = projectWorldPoints(corners, PRESET_SESSION.referencePoints);
-    result = calculateCalibration({
-      corners,
-      dataPoints,
-      referencePoints: PRESET_SESSION.referencePoints
-    });
-    published = false;
-    setFrame(0, false);
-  }
-
-  function stopPlayback() {
-    if (timer) window.clearInterval(timer);
-    timer = null;
-    if (playButton) {
-      playButton.innerHTML = '<i data-lucide="play"></i><span>เล่นตัวอย่าง</span>';
-      refreshIcons(playButton);
-    }
-  }
-
-  function setFrame(nextIndex, stop = true) {
-    if (stop) stopPlayback();
-    frameIndex = Math.max(0, Math.min(PRESET_FRAMES.length - 1, nextIndex));
-    render();
-  }
-
   function render() {
-    if (!corners.length) return;
-    const frame = PRESET_FRAMES[frameIndex];
-    workspace.render({
-      corners,
-      dataPoints,
-      cornerCount: frame.corners,
-      pointCount: frame.points,
-      showScale: frame.scale,
-      showOverlay: overlayVisible,
-      scaleWidth: 6,
-      scaleHeight: 6,
-      draggablePoints: frame.points === dataPoints.length
-    });
+    // Stepper UI update
+    if (stepBar) {
+      stepBar.innerHTML = PRESET_PHASES.map(p => `
+        <div class="phase-step-item ${p.id === currentPhase ? 'active' : ''} ${p.id < currentPhase ? 'completed' : ''}" data-phase="${p.id}">
+          <span class="step-num">${p.id < currentPhase ? '✓' : p.id}</span>
+          <span>${p.name}</span>
+        </div>
+      `).join('');
 
-    document.querySelectorAll('[data-preset-phase]').forEach((button) => {
-      const phase = Number(button.dataset.presetPhase);
-      button.classList.toggle('active', phase === frame.phase);
-      button.setAttribute('aria-selected', String(phase === frame.phase));
-    });
-
-    const status = document.getElementById('presetStageStatus');
-    const counter = document.getElementById('presetStageCounter');
-    const results = document.getElementById('presetWorkflowResults');
-    if (status) status.textContent = PRESET_PHASE_LABELS[frame.phase];
-    if (counter) {
-      counter.textContent = frame.result && published
-        ? 'Module 1–5 ใช้ Q ชุดนี้'
-        : frame.phase === 1
-        ? `${frame.corners}/4 จุดสอบเทียบ`
-        : frame.phase === 3
-          ? `${frame.points}/6 จุดวัด`
-          : `${frameIndex + 1}/${PRESET_FRAMES.length}`;
-    }
-    if (previousButton) previousButton.disabled = frameIndex === 0;
-    if (nextButton) nextButton.disabled = frameIndex === PRESET_FRAMES.length - 1;
-    if (analyzeButton) {
-      analyzeButton.disabled = frame.points !== 6 || published;
-      analyzeButton.setAttribute('aria-pressed', String(published));
-    }
-    if (results) results.hidden = !(frame.result && result);
-
-    if (result) {
-      const values = {
-        presetL0: `${fmt(result.referenceLii, 4)} cm`,
-        presetLrec: `${fmt(result.recoveredLii, 4)} cm`,
-        presetEps: `${fmt(result.epsilon, 4)} cm`,
-        presetBound: `${fmt(result.bound, 4)} cm`
-      };
-      Object.entries(values).forEach(([id, value]) => {
-        const element = document.getElementById(id);
-        if (element) element.textContent = value;
+      stepBar.querySelectorAll('.phase-step-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const ph = Number(item.dataset.phase);
+          if (ph < currentPhase) {
+            if (ph <= 3 && currentPhase >= 4) {
+              workspace.setImage(PRESET_SESSION.imageSrc, PRESET_SESSION.imageAlt).then(() => {
+                tiltedImageLoaded = false;
+                setPhase(ph);
+              });
+            } else {
+              setPhase(ph);
+            }
+          }
+        });
       });
-      const resultStatus = document.getElementById('presetResultStatus');
-      if (resultStatus) {
-        resultStatus.textContent = result.passed ? 'PASS' : 'CHECK';
-        resultStatus.className = `value ${result.passed ? 'success' : 'warning'}`;
+    }
+
+    // Status label
+    if (statusElem) statusElem.textContent = PRESET_PHASES[currentPhase - 1]?.name || '';
+    if (counterElem) counterElem.textContent = `ขั้นตอน ${currentPhase} / 6`;
+
+    // Render Workspace SVG Overlay
+    if (currentPhase <= 3) {
+      // Top-Down rendering
+      workspace.render({
+        corners: topCorners,
+        dataPoints: pPixelPoints,
+        cornerCount: topCorners.length,
+        pointCount: pPixelPoints.length,
+        showScale: topCorners.length === 4,
+        showOverlay: overlayVisible,
+        scaleWidth: 6,
+        scaleHeight: 6,
+        interactiveMode: currentPhase === 1 || currentPhase === 2,
+        draggablePoints: currentPhase === 2,
+        pointPrefix: 'P'
+      });
+    } else {
+      // Tilted rendering (Phase 4, 5, 6)
+      workspace.render({
+        corners: tiltedCorners,
+        dataPoints: qPixelPoints,
+        shadowPoints: pPixelPoints,
+        cornerCount: tiltedCorners.length,
+        pointCount: qPixelPoints.length,
+        showScale: tiltedCorners.length === 4,
+        showOverlay: overlayVisible,
+        scaleWidth: 6,
+        scaleHeight: 6,
+        interactiveMode: currentPhase === 4 || currentPhase === 5,
+        draggablePoints: currentPhase === 5,
+        pointPrefix: 'Q',
+        shadowPrefix: 'P'
+      });
+    }
+
+    // Toggle Upload Area display
+    if (uploadArea) {
+      uploadArea.style.display = (currentPhase === 4) ? 'block' : 'none';
+    }
+
+    // Update Real-time Calc Panel
+    const pWorld = pWorldPoints.length === 6 ? pWorldPoints : computePWorldPoints();
+    const qWorld = currentPhase >= 4 ? computeQWorldPoints() : [];
+    calcPanel?.render({ pWorldPoints: pWorld, qWorldPoints: qWorld });
+
+    // Action button state
+    if (actionBtn) {
+      if (currentPhase === 1) {
+        actionBtn.disabled = topCorners.length !== 4;
+        actionBtn.innerHTML = '<i data-lucide="arrow-right"></i><span>กำหนดจุด P1-P6</span>';
+      } else if (currentPhase === 2) {
+        actionBtn.disabled = pPixelPoints.length !== 6;
+        actionBtn.innerHTML = '<i data-lucide="bookmark"></i><span>บันทึกจุดอ้างอิง P</span>';
+      } else if (currentPhase === 3) {
+        actionBtn.disabled = false;
+        actionBtn.innerHTML = '<i data-lucide="image"></i><span>ไปยังภาพเอียง (Tilted View)</span>';
+      } else if (currentPhase === 4) {
+        actionBtn.disabled = tiltedCorners.length !== 4;
+        actionBtn.innerHTML = '<i data-lucide="arrow-right"></i><span>กำหนดจุด Q1-Q6</span>';
+      } else if (currentPhase === 5) {
+        actionBtn.disabled = qPixelPoints.length !== 6;
+        actionBtn.innerHTML = '<i data-lucide="calculator"></i><span>ประมวลผลไปยัง Module 1–5</span>';
+      } else if (currentPhase === 6) {
+        actionBtn.disabled = published;
+        actionBtn.innerHTML = '<i data-lucide="check-circle"></i><span>ประมวลผลแล้ว</span>';
+      }
+      refreshIcons(actionBtn);
+    }
+
+    if (prevBtn) prevBtn.disabled = currentPhase === 1;
+
+    // Results Box Display
+    if (resultsBox) {
+      resultsBox.hidden = !(result && published);
+      if (result) {
+        const values = {
+          presetL0: `${fmt(result.referenceLii, 4)} cm`,
+          presetLrec: `${fmt(result.recoveredLii, 4)} cm`,
+          presetEps: `${fmt(result.epsilon, 4)} cm`,
+          presetBound: `${fmt(result.bound, 4)} cm`
+        };
+        Object.entries(values).forEach(([id, val]) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = val;
+        });
+        const st = document.getElementById('presetResultStatus');
+        if (st) {
+          st.textContent = result.passed ? 'PASS' : 'CHECK';
+          st.className = `value ${result.passed ? 'success' : 'warning'}`;
+        }
       }
     }
   }

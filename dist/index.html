@@ -12,9 +12,9 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}] });"></script>
-  
-  <script type="module" crossorigin src="./assets/index-Bk8yAJ_6.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-TYcZazym.css">
+  
+  <script type="module" crossorigin src="./assets/index-BMLlBOaE.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CTr1Y57O.css">
 </head>
 <body>
   <header class="site-header">
@@ -62,12 +62,11 @@
 
           <div class="preset-studio">
             <div class="preset-canvas-column">
-              <div class="workflow-tabs" role="tablist" aria-label="ขั้นตอนตัวอย่าง">
-                <button class="active" data-preset-phase="0" role="tab" aria-selected="true"><span>01</span> ภาพต้นฉบับ</button>
-                <button data-preset-phase="1" role="tab" aria-selected="false"><span>02</span> กรอบสอบเทียบ</button>
-                <button data-preset-phase="2" role="tab" aria-selected="false"><span>03</span> สเกล</button>
-                <button data-preset-phase="3" role="tab" aria-selected="false"><span>04</span> จุด LII</button>
-                <button data-preset-phase="4" role="tab" aria-selected="false"><span>05</span> ผลลัพธ์</button>
+              <div class="phase-stepper-bar" id="presetStepBar"></div>
+              <div class="upload-area" id="presetTiltedUploadArea" style="display:none; margin-bottom:12px;" role="button" tabindex="0">
+                <i data-lucide="upload"></i>
+                <span><strong>อัปโหลดภาพมุมเอียง (Tilted View)</strong><small>หรือใช้ภาพตัวอย่างเริ่มต้น</small></span>
+                <input type="file" id="presetTiltedFileInput" accept="image/*" style="display:none" />
               </div>
               <div id="presetWorkflowWorkspace"></div>
             </div>
@@ -75,20 +74,23 @@
             <aside class="preset-control-panel">
               <div class="workflow-state" aria-live="polite">
                 <span>ขั้นตอนปัจจุบัน</span>
-                <strong id="presetStageStatus">ภาพต้นฉบับ</strong>
-                <small id="presetStageCounter">1/13</small>
+                <strong id="presetStageStatus">Top-Down: จุดสอบเทียบ (C1-C4)</strong>
+                <small id="presetStageCounter">ขั้นตอน 1 / 6</small>
               </div>
 
               <div class="workflow-controls" aria-label="ควบคุมตัวอย่าง">
-                <button class="btn btn-secondary" id="presetPlay" type="button"><i data-lucide="play"></i><span>เล่นลำดับตัวอย่าง</span></button>
-                <div class="workflow-controls-primary">
-                  <button class="icon-btn" id="presetPrevious" type="button" aria-label="ขั้นตอนก่อนหน้า" disabled><i data-lucide="chevron-left"></i></button>
-                  <button class="icon-btn" id="presetNext" type="button" aria-label="ขั้นตอนถัดไป"><i data-lucide="chevron-right"></i></button>
-                  <button class="icon-btn" id="presetReset" type="button" aria-label="เริ่มใหม่"><i data-lucide="rotate-ccw"></i></button>
+                <button class="btn btn-primary btn-block" id="presetActionBtn" type="button">
+                  <i data-lucide="arrow-right"></i><span>กำหนดจุด P1-P6</span>
+                </button>
+
+                <div class="workflow-controls-primary" style="margin-top:8px">
+                  <button class="icon-btn" id="presetPrevBtn" type="button" aria-label="ย้อนขั้นตอน" disabled><i data-lucide="chevron-left"></i></button>
+                  <button class="icon-btn" id="presetReset" type="button" aria-label="เริ่มใหม่ทั้งหมด"><i data-lucide="rotate-ccw"></i></button>
                   <button class="icon-btn" id="presetToggleOverlay" type="button" aria-label="ซ่อนจุดและเส้น"><i data-lucide="eye-off"></i></button>
                 </div>
-                <button class="btn btn-primary" id="presetAnalyze" type="button" disabled><i data-lucide="calculator"></i><span>ประมวลผลไปยัง Module 1–5</span></button>
               </div>
+
+              <div id="presetRealtimeCalcContainer"></div>
 
               <div class="workflow-results" id="presetWorkflowResults" hidden>
                 <div class="metric"><label>Reference L₀</label><div class="value" id="presetL0">—</div></div>
@@ -100,9 +102,9 @@
 
               <div class="preset-boundary-note">
                 <strong>ภาพสาธิต ไม่ใช่ผลวินิจฉัย</strong>
-                <span>จุดและเส้นทั้งหมดสร้างโดยหน้าเว็บ ไม่ได้ฝังอยู่ในภาพต้นฉบับ</span>
+                <span>จุด P1-P6 คืออ้างอิงจาก Top-Down, จุด Q1-Q6 คือจุดวัดจริงบนภาพเอียง</span>
               </div>
-              <button class="btn btn-secondary preset-live-cta" id="presetGoLive" type="button"><i data-lucide="camera"></i><span>เริ่มวัดภาพของคุณ</span></button>
+              <button class="btn btn-secondary preset-live-cta" id="presetGoLive" type="button"><i data-lucide="camera"></i><span>เริ่มวัดภาพของคุณใน Live Studio</span></button>
             </aside>
           </div>
 
@@ -349,10 +351,12 @@
             <div class="live-capture-panel">
               <div class="live-step-status">
                 <div class="demo-step-dots">
-                  <div class="demo-step-dot" id="step1Dot"></div>
-                  <div class="demo-step-dot" id="step2Dot"></div>
-                  <div class="demo-step-dot" id="step3Dot"></div>
-                  <div class="demo-step-dot" id="step4Dot"></div>
+                  <div class="demo-step-dot" id="liveStep1Dot"></div>
+                  <div class="demo-step-dot" id="liveStep2Dot"></div>
+                  <div class="demo-step-dot" id="liveStep3Dot"></div>
+                  <div class="demo-step-dot" id="liveStep4Dot"></div>
+                  <div class="demo-step-dot" id="liveStep5Dot"></div>
+                  <div class="demo-step-dot" id="liveStep6Dot"></div>
                 </div>
                 <p id="demoStepHint" class="small muted"></p>
               </div>
@@ -371,7 +375,7 @@
 
               <div class="upload-area" id="demoUploadArea" role="button" tabindex="0" aria-controls="demoFileInput">
                 <i data-lucide="upload"></i>
-                <span><strong>เลือกภาพถ่าย</strong><small>JPG หรือ PNG</small></span>
+                <span><strong>เลือก/อัปโหลดภาพถ่าย</strong><small>ภาพ Top-Down หรือ ภาพเอียง</small></span>
                 <input type="file" id="demoFileInput" accept="image/*" style="display:none" />
               </div>
 
@@ -382,7 +386,7 @@
                 <button class="icon-btn" id="resetDemoBtn" type="button" aria-label="เริ่มกำหนดจุดใหม่"><i data-lucide="rotate-ccw"></i></button>
                 <button class="icon-btn" id="expandLiveWorkspaceBtn" type="button" aria-label="ขยายพื้นที่ภาพ"><i data-lucide="maximize-2"></i></button>
               </div>
-              <button class="btn btn-primary live-process-btn" id="analyzeDemoBtn" type="button" disabled><i data-lucide="calculator"></i><span>ประมวลผลไปยัง Module 1–5</span></button>
+              <button class="btn btn-primary live-process-btn" id="analyzeDemoBtn" type="button" disabled><i data-lucide="arrow-right"></i><span>ขั้นตอนถัดไป</span></button>
               <p id="demoPointError" class="small value danger" role="alert" hidden></p>
 
               <div id="demoVideoContainer" style="display:none">
@@ -403,6 +407,8 @@
                   <p>พิกัดโลกที่กู้คืนด้วย \(H^{-1}\)</p>
                 </div>
               </div>
+
+              <div id="liveRealtimeCalcContainer"></div>
 
               <div id="demoResultsBox" style="display:none">
                 <div id="demoValidationNote" class="note"></div>
@@ -441,7 +447,6 @@
       </div>
     </div>
   </footer>
-
-
+
 </body>
 </html>

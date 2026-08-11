@@ -1163,3 +1163,213 @@ footer {
     min-height: 210px;
   }
 }
+
+/* ================= P-SHADOW & MULTI-PHASE WORKFLOW ENHANCEMENTS ================= */
+
+.shadow-line {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2.5px;
+  stroke-linecap: round;
+  stroke-dasharray: 6 4;
+  opacity: 0.4;
+}
+
+.shadow-point-halo {
+  fill: rgba(104, 119, 133, 0.15);
+  stroke: var(--muted);
+  stroke-width: 1px;
+  stroke-dasharray: 3 3;
+  opacity: 0.5;
+}
+
+.shadow-point-core {
+  fill: var(--muted);
+  opacity: 0.45;
+}
+
+.shadow-label {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-weight: 600;
+  opacity: 0.65;
+}
+
+/* Phase Stepper Bar */
+.phase-stepper-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.phase-step-item {
+  flex: 1;
+  min-width: 110px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.phase-step-item .step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.phase-step-item.active {
+  background: var(--blue-soft);
+  border-color: var(--blue);
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.phase-step-item.active .step-num {
+  background: var(--blue);
+  color: #fff;
+}
+
+.phase-step-item.completed {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.phase-step-item.completed .step-num {
+  background: var(--green);
+  color: #fff;
+}
+
+/* Real-time Calculation Panel */
+.realtime-calc-card {
+  margin-top: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.realtime-calc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.realtime-calc-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.realtime-calc-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: var(--surface-2);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+}
+
+.metric-mini label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.metric-mini .value {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.metric-mini .highlight-val {
+  color: var(--blue);
+}
+
+.metric-mini .success-val {
+  color: var(--green);
+}
+
+.metric-mini .warning-val {
+  color: var(--amber);
+}
+
+.realtime-calc-detail {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  font-family: var(--mono);
+}
+
+.calc-block-title {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.calc-sub-line {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 8px;
+  background: var(--surface-3);
+  border-radius: 4px;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.calc-sub-line span {
+  color: var(--muted);
+}
+
+.calc-sub-line strong {
+  align-self: flex-end;
+  color: var(--blue);
+}
+
+.calc-sub-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  margin-top: 6px;
+}
+
+.text-blue { color: var(--blue); }
+.text-green { color: var(--green); }
+.text-amber { color: var(--amber); }
+
+.btn-xs {
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
