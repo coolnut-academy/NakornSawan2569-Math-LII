@@ -4,7 +4,7 @@
 
 [![Build Status](https://img.shields.io/badge/Build-Vite%208-blue.svg)](https://vite.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Self--Tests-32%2F32%20Passed-brightgreen.svg)](#-automated-self-test-suite)
+[![Tests](https://img.shields.io/badge/Self--Tests-36%2F36%20Passed-brightgreen.svg)](#-automated-self-test-suite)
 
 ---
 
@@ -12,14 +12,14 @@
 
 **LII Lens Lab** เป็นเว็บแอปพลิเคชันเชิงคณิตศาสตร์สำหรับการพิสูจน์เชิงประวัติตัวแบบ (Proof of Concept) ในการวัดดัชนีความไม่เป็นระเบียบของฟัน (Little’s Irregularity Index: LII) จากภาพถ่าย 2D ที่เกิดความบิดเบี้ยวเชิงทัศนียภาพ (Perspective/Homography Distortion)
 
-โครงการนี้มุ่งเน้นการพิสูจน์ความถูกต้องทางคณิตศาสตร์และขอบเขตความคลาดเคลื่อนตามทฤษฎีบท:
+โครงการนี้มุ่งเน้นการพิสูจน์ความถูกต้องทางคณิตศาสตร์และขอบเขตความคลาดเคลื่อนบน **Polyline Path Length Model** ($LII = \sum_{i=1}^5 P_iP_{i+1}$) จากพิกัด landmark 6 จุดบนขอบฟัน (incisal edge) ตามทฤษฎีบท:
 
 $$\left| \hat{L} - L_0 \right| \le 10\varepsilon$$
 
 โดยพิสูจน์ว่าเมื่อจุดอ้างอิงบนระนาบ $2\text{D}$ คลาดเคลื่อนไม่เกิน $\varepsilon$ ต่อจุด ผลรวมระยะทาง $5$ ช่วง ($LII$) จะมีความคลาดเคลื่อนสะสมไม่เกิน $10\varepsilon$
 
 > **⚠️ ข้อควรระวังทางวิชาการ (Claim Guardrails):**
-> โครงการนี้เป็นเพียง **Mathematical Proof of Concept** บนตัวแบบคณิตศาสตร์ $2\text{D}$ ไม่ใช่โปรแกรมตรวจวินิจฉัยทางการแพทย์ทางคลินิกจริง (Not a clinical diagnostic tool)
+> โครงการนี้เป็นเพียง **Mathematical Proof of Concept** บนตัวแบบคณิตศาสตร์ $2\text{D}$ ไม่ใช่โปรแกรมตรวจวินิจฉัยทางการแพทย์ทางคลินิกจริง (Not a clinical diagnostic tool) และค่า LII ในตัวแบบนี้คือ Polyline Path Length ไม่ใช่ Clinical Displacement Index แบบดั้งเดิมที่ใช้วัดระยะห่างที่จุดสัมผัสระหว่างฟัน
 
 ## 🎯 การแยกโหมดใช้งานชัดเจน (Dual Mode Architecture)
 
@@ -96,6 +96,13 @@ NakornSawan2569-Math-LII/
 ## 📖 คู่มือการใช้งาน (User Guide)
 
 แอปพลิเคชันประกอบด้วย workflow สำหรับ Preset และ Live Studio โดยแต่ละหน้ามี Module 1–5 และ snapshot ที่บันทึกแยกกัน สามารถใช้งานได้ทั้งบน Desktop, Tablet และ Mobile (iOS / Android):
+
+### 📱 การรองรับการใช้งานบน iPad และอุปกรณ์หน้าจอสัมผัส (iPad & Touch Optimization)
+- **Precision Nudge D-Pad:** เพิ่มแผงควบคุมลูกศร `▲` `▼` `◄` `►` บนหน้าจอสำหรับขยับจุดที่เลือกทีละ `1px` หรือ `5px` โดยไม่ต้องใช้คีย์บอร์ด PC
+- **Touch Loupe Dynamic Offset:** ตัวแว่นขยาย (Loupe) จะลอยสูงขึ้นเหนือจุดสัมผัส 65px เพื่อไม่ให้นิ้วมือบังภาพขยายขอบฟันขณะลากจุด
+- **Touch Hit Target (>44px):** ขยายรัศมีขอบเขตการสัมผัสของจุด SVG ให้กดติดง่าย ไม่หลุดมือ
+- **Touch Mode Toggle:** เพิ่มปุ่มสลับโหมด `[ 📍 โหมดปรับจุด ]` vs `[ ✋ โหมดเลื่อนภาพ ]` เด่นชัดบน Toolbar
+- **Tablet Ergonomics:** แถบนำทางขั้นตอนและปุ่มยืนยันถูกตรึงที่ด้านล่างแบบ Sticky Bottom Bar พร้อมปรับขนาดฟอนต์ input ป้องกัน iOS Safari แอบซูมเข้าหน้าจอ
 
 ### 📷 Module 07: Live Physical Demo (สแกนภาพถ่ายจริงหน้างาน)
 โมดูลสำหรับเปิดกล้องถ่ายภาพกระดาษ Calibration Target จริงบนโต๊ะเพื่อทดสอบอัลกอริทึม DLT สดๆ

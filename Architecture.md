@@ -225,7 +225,7 @@ createMeasurementStore({ source, label, storageKey })
 | Function | Purpose |
 |----------|---------|
 | `distance(a, b)` | Euclidean distance between 2D points |
-| `lii(pts)` | Sum of 5 consecutive segment distances (Little's Irregularity Index) |
+| `lii(pts)` | Sum of 5 consecutive segment distances (Polyline Path Length Model) |
 | `ae(a, b)` | Absolute error |
 | `re(estimate, truth)` | Relative error (%) |
 | `fmt(v, d)` | Format number to fixed decimals with NaN guard |
@@ -303,7 +303,12 @@ createMeasurementStore({ source, label, storageKey })
 ### 8.1 `image-workspace.js` — Photo + SVG Overlay System
 - สร้าง `<img>` + `<svg>` overlay ซ้อนกัน
 - SVG overlay แสดง: calibration quadrilateral, corner labels/coordinates, dimension arrows, measurement polyline, draggable point circles
-- รองรับ pointer/touch events: click to place, drag to move, keyboard arrow keys
+- **iPad & Touch Optimization**:
+  - แผงควบคุม **Precision Nudge D-Pad (`.workspace-nudge-pad`)** บนหน้าจอสำหรับขยับจุดที่เลือกทีละ `1px` หรือ `5px` โดยไม่ต้องใช้คีย์บอร์ด PC
+  - **Dynamic Touch Loupe Offset**: แว่นขยายจะขยายขนาดเป็น `160px` และลอยสูงขึ้นเหนือจุดสัมผัส 65px เพื่อไม่ให้นิ้วมือบังขอบฟันขณะลากจุด
+  - **Enlarged Touch Targets**: ขยายพื้นที่สัมผัสของจุด SVG (`.point-hit-target`) เป็นรัศมีอย่างน้อย `22px` (> 44px hit diameter)
+  - **Touch Mode Pill Toggle**: ปุ่มสลับโหมด `[ 📍 โหมดปรับจุด ]` vs `[ ✋ โหมดเลื่อนภาพ ]` เด่นชัดบน Toolbar
+- รองรับ pointer/touch events: click to place, drag to move, touch nudge D-Pad, keyboard arrow keys
 - `ResizeObserver` สำหรับ re-render เมื่อ container resize
 
 ### 8.2 `svg-renderer.js` — 2D Plot Engine

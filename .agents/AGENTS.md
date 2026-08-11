@@ -11,6 +11,7 @@
 - **Build Tool**: Vite 8
 - **ภาษา UI/Documentation**: ไทย (Thai) เป็นภาษาหลักของ UI text, คอมเมนต์ในโค้ดเป็นภาษาอังกฤษ
 - **ลักษณะ**: Single-Page Application สำหรับ Mathematical Proof of Concept (ไม่ใช่ Clinical Tool)
+- **ตัวแบบ LII**: ใช้ **Polyline Path Length Model** ($LII = \sum_{i=1}^5 P_iP_{i+1}$) จาก landmark 6 จุดบนขอบฟัน (incisal edge) เป็นตัวแบบเรขาคณิต 2D ไม่ใช่ Clinical Displacement Index แบบดั้งเดิม
 
 ---
 
@@ -153,6 +154,7 @@ test('N description', () => {
 ### ⚠️ Domain Guardrails
 - โปรเจกต์นี้เป็น **Mathematical Proof of Concept** เท่านั้น
 - **ห้ามเพิ่มข้อความที่สื่อว่าเป็นเครื่องมือวินิจฉัยทางการแพทย์**
+- ค่า LII ในแอปพลิเคชันนี้คือ Polyline Path Length (ผลรวมระยะยูคลิด 5 ช่วง จากจุดบนขอบฟัน P₁–P₆) ไม่ใช่ Little's Irregularity Index แบบ clinical displacement
 - เมื่อภาพไม่มี ground truth → ต้องแสดง "MEASUREMENT ONLY" ไม่ใช่ PASS/FAIL
 
 ### ⚠️ Store Isolation
@@ -186,6 +188,6 @@ npm test         # 36 self-tests (Node.js)
 | `src/core/calibration-session.js` | Main calibration engine | Used by both Preset + Live |
 | `src/core/measurement-store.js` | Pub/sub state management | Deep-clone, localStorage, 2 instances |
 | `src/ui/analysis-context.js` | DOM cloning for dual mode | Re-prefix IDs, `for`, `href` |
-| `src/ui/image-workspace.js` | Photo + overlay workspace | SVG overlay, drag, keyboard, resize |
+| `src/ui/image-workspace.js` | Photo + overlay workspace | SVG overlay, touch hit targets (>44px), touch Loupe offset, Nudge D-Pad, keyboard |
 | `src/modules/07-live-demo.js` | Live camera/upload workflow | Largest module (~440 lines) |
 | `src/tests/self-tests.js` | Math + integration tests | 36 tests, deterministic |
