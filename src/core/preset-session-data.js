@@ -1,7 +1,7 @@
 export const PRESET_SESSION = {
-  imageSrc: new URL('../assets/preset-dental-guide.png', import.meta.url).href,
+  imageSrc: './preset-dental-guide.png',
   imageAlt: 'ภาพถ่าย Top-Down ของโมเดลฟันล่างบนแผ่นสอบเทียบ 6x6cm',
-  tiltedImageSrc: new URL('../assets/preset-dental-guide-tilted.png', import.meta.url).href,
+  tiltedImageSrc: './preset-dental-guide-tilted.png',
   tiltedImageAlt: 'ภาพถ่ายมุมเอียง (Tilted View) ของโมเดลฟันล่างบนแผ่นสอบเทียบ 6x6cm',
   cornerPointsNormalized: [
     [0.18, 0.20],
