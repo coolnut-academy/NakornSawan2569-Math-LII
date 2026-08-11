@@ -41,7 +41,8 @@ export function initLiveDemo() {
 
   workspace = createImageWorkspace(root, {
     onPoint: handleWorkspacePoint,
-    onMovePoint: handleWorkspacePointMove
+    onMovePoint: handleWorkspacePointMove,
+    onMoveCorner: handleWorkspaceCornerMove
   });
 
   calcPanel = createRealtimeCalcPanel('liveRealtimeCalcContainer');
@@ -218,6 +219,16 @@ function handleWorkspacePointMove(index, point, { committed }) {
     if (pPixelPoints[index]) pPixelPoints[index] = point;
   } else {
     if (qPixelPoints[index]) qPixelPoints[index] = point;
+  }
+  publishedToModules = false;
+  render();
+}
+
+function handleWorkspaceCornerMove(index, point, { committed }) {
+  if (currentPhase <= 3) {
+    if (topCorners[index]) topCorners[index] = point;
+  } else {
+    if (tiltedCorners[index]) tiltedCorners[index] = point;
   }
   publishedToModules = false;
   render();

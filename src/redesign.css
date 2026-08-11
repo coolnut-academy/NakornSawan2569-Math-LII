@@ -469,7 +469,10 @@ h3 {
 .workspace-media {
   position: relative;
   width: 100%;
-  min-height: 420px;
+  max-width: min(100%, 540px);
+  margin: 0 auto;
+  min-height: 320px;
+  max-height: calc(72vh - 40px);
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
@@ -543,6 +546,11 @@ h3 {
   stroke: #fff;
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
+}
+
+.workspace-overlay.is-interactive .calibration-point,
+.workspace-overlay.has-draggable-points .calibration-point {
+  cursor: grab;
 }
 
 .measurement-point .point-core {

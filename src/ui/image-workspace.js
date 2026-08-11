@@ -29,9 +29,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
   let width = 0;
   let height = 0;
   let interactive = false;
-  let pointsDraggable = false;
-  let draggedPointIndex = null;
-  let lastRenderOptions = null;
+  let draggedItem = null;
 
   function eventToImagePoint(event) {
     const rect = overlay.getBoundingClientRect();
@@ -42,28 +40,50 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
   }
 
   overlay.addEventListener('pointerdown', (event) => {
-    const target = event.target.closest?.('.measurement-point');
-    if (!pointsDraggable || !target || !onMovePoint) return;
-    event.preventDefault();
-    draggedPointIndex = Number(target.dataset.pointIndex);
-    overlay.setPointerCapture?.(event.pointerId);
-    overlay.classList.add('is-dragging-point');
+    const cornerTarget = event.target.closest?.('.calibration-point');
+    const pointTarget = event.target.closest?.('.measurement-point');
+
+    if (cornerTarget && onMoveCorner && cornerTarget.dataset.cornerIndex !== undefined) {
+      event.preventDefault();
+      draggedItem = { type: 'corner', index: Number(cornerTarget.dataset.cornerIndex) };
+      overlay.setPointerCapture?.(event.pointerId);
+      overlay.classList.add('is-dragging-point');
+      return;
+    }
+
+    if (pointsDraggable && pointTarget && onMovePoint && pointTarget.dataset.pointIndex !== undefined) {
+      event.preventDefault();
+      draggedItem = { type: 'point', index: Number(pointTarget.dataset.pointIndex) };
+      overlay.setPointerCapture?.(event.pointerId);
+      overlay.classList.add('is-dragging-point');
+      return;
+    }
   });
 
   overlay.addEventListener('pointermove', (event) => {
-    if (draggedPointIndex === null || !onMovePoint) return;
+    if (!draggedItem) return;
     event.preventDefault();
-    onMovePoint(draggedPointIndex, eventToImagePoint(event), { committed: false });
+    const pt = eventToImagePoint(event);
+    if (draggedItem.type === 'corner' && onMoveCorner) {
+      onMoveCorner(draggedItem.index, pt, { committed: false });
+    } else if (draggedItem.type === 'point' && onMovePoint) {
+      onMovePoint(draggedItem.index, pt, { committed: false });
+    }
   });
 
   overlay.addEventListener('pointerup', (event) => {
-    if (draggedPointIndex !== null && onMovePoint) {
+    if (draggedItem) {
       event.preventDefault();
-      const pointIndex = draggedPointIndex;
-      draggedPointIndex = null;
+      const item = draggedItem;
+      draggedItem = null;
       overlay.releasePointerCapture?.(event.pointerId);
       overlay.classList.remove('is-dragging-point');
-      onMovePoint(pointIndex, eventToImagePoint(event), { committed: true });
+      const pt = eventToImagePoint(event);
+      if (item.type === 'corner' && onMoveCorner) {
+        onMoveCorner(item.index, pt, { committed: true });
+      } else if (item.type === 'point' && onMovePoint) {
+        onMovePoint(item.index, pt, { committed: true });
+      }
       return;
     }
     if (!interactive || !width || !height || !onPoint) return;
@@ -71,19 +91,33 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
   });
 
   overlay.addEventListener('pointercancel', (event) => {
-    if (draggedPointIndex !== null && onMovePoint) {
-      const pointIndex = draggedPointIndex;
-      draggedPointIndex = null;
-      onMovePoint(pointIndex, eventToImagePoint(event), { committed: true });
+    if (draggedItem) {
+      const item = draggedItem;
+      draggedItem = null;
+      const pt = eventToImagePoint(event);
+      if (item.type === 'corner' && onMoveCorner) {
+        onMoveCorner(item.index, pt, { committed: true });
+      } else if (item.type === 'point' && onMovePoint) {
+        onMovePoint(item.index, pt, { committed: true });
+      }
     }
     overlay.classList.remove('is-dragging-point');
   });
 
   overlay.addEventListener('keydown', (event) => {
-    const target = event.target.closest?.('.measurement-point');
-    if (!pointsDraggable || !target || !onMovePoint || !event.key.startsWith('Arrow')) return;
+    const cornerTarget = event.target.closest?.('.calibration-point');
+    const pointTarget = event.target.closest?.('.measurement-point');
+    if (!event.key.startsWith('Arrow')) return;
+
+    const target = pointTarget || cornerTarget;
+    if (!target) return;
+
+    const isCorner = !!cornerTarget;
+    const callback = isCorner ? onMoveCorner : onMovePoint;
+    if (!callback) return;
+
     event.preventDefault();
-    const index = Number(target.dataset.pointIndex);
+    const index = Number(isCorner ? target.dataset.cornerIndex : target.dataset.pointIndex);
     const core = target.querySelector('.point-core');
     const step = (event.shiftKey ? 10 : 2) * (width / overlay.getBoundingClientRect().width);
     const deltas = {
@@ -97,8 +131,8 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
       Math.max(0, Math.min(width, Number(core.getAttribute('cx')) + dx)),
       Math.max(0, Math.min(height, Number(core.getAttribute('cy')) + dy))
     ];
-    onMovePoint(index, point, { committed: true });
-    overlay.querySelector(`[data-point-index="${index}"]`)?.focus();
+    callback(index, point, { committed: true });
+    overlay.querySelector(`[data-${isCorner ? 'corner' : 'point'}-index="${index}"]`)?.focus();
   });
 
   function setImage(src, alt = '') {
@@ -259,8 +293,19 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
     }
 
     visibleCorners.forEach((point, index) => {
-      const group = svgNode('g', { class: 'calibration-point', tabindex: '0', role: 'img' });
-      group.setAttribute('aria-label', `C${index + 1} calibration point`);
+      const group = svgNode('g', {
+        class: 'calibration-point',
+        tabindex: '0',
+        role: 'img',
+        'data-corner-index': index
+      });
+      group.setAttribute('aria-label', `C${index + 1} calibration point; drag or use arrow keys to adjust`);
+      const title = svgNode('title');
+      title.textContent = `C${index + 1}: drag to adjust`;
+      group.appendChild(title);
+      group.appendChild(svgNode('circle', {
+        cx: point[0], cy: point[1], r: pointRadius * 2.2, class: 'point-hit-target'
+      }));
       group.appendChild(svgNode('circle', {
         cx: point[0], cy: point[1], r: pointRadius * 1.45, class: 'point-halo'
       }));

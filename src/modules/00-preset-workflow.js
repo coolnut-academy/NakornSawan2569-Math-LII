@@ -15,7 +15,8 @@ export function initPresetWorkflow({ onGoLive } = {}) {
 
   const workspace = createImageWorkspace(root, {
     onPoint: handleWorkspacePoint,
-    onMovePoint: handleWorkspacePointMove
+    onMovePoint: handleWorkspacePointMove,
+    onMoveCorner: handleWorkspaceCornerMove
   });
 
   const calcPanel = createRealtimeCalcPanel('presetRealtimeCalcContainer');
@@ -125,6 +126,16 @@ export function initPresetWorkflow({ onGoLive } = {}) {
     } else {
       if (qPixelPoints[index]) qPixelPoints[index] = point;
     }
+    render();
+  }
+
+  function handleWorkspaceCornerMove(index, point, { committed }) {
+    if (currentPhase <= 3) {
+      if (topCorners[index]) topCorners[index] = point;
+    } else {
+      if (tiltedCorners[index]) tiltedCorners[index] = point;
+    }
+    published = false;
     render();
   }
 
