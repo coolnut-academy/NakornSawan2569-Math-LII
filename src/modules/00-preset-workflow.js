@@ -58,25 +58,49 @@ export function initPresetWorkflow({ onGoLive } = {}) {
   loadTopDownImage();
 
   function loadTopDownImage() {
-    workspace.setImage(PRESET_SESSION.imageSrc, PRESET_SESSION.imageAlt).then(({ width, height }) => {
-      topCorners = normalizedToPixels(PRESET_SESSION.cornerPointsNormalized, width, height);
-      pPixelPoints = projectWorldPoints(topCorners, PRESET_SESSION.referencePoints);
-      topImageLoaded = true;
-      tiltedImageLoaded = false;
-      currentPhase = 1;
-      published = false;
-      render();
-    });
+    workspace.setImage(PRESET_SESSION.imageSrc, PRESET_SESSION.imageAlt)
+      .then(({ width, height }) => {
+        topCorners = normalizedToPixels(PRESET_SESSION.cornerPointsNormalized, width, height);
+        pPixelPoints = projectWorldPoints(topCorners, PRESET_SESSION.referencePoints);
+        topImageLoaded = true;
+        tiltedImageLoaded = false;
+        currentPhase = 1;
+        published = false;
+        render();
+      })
+      .catch((err) => {
+        console.warn('Image load fallback triggered:', err);
+        const width = 1000;
+        const height = 1000;
+        topCorners = normalizedToPixels(PRESET_SESSION.cornerPointsNormalized, width, height);
+        pPixelPoints = projectWorldPoints(topCorners, PRESET_SESSION.referencePoints);
+        topImageLoaded = true;
+        tiltedImageLoaded = false;
+        currentPhase = 1;
+        published = false;
+        render();
+      });
   }
 
   function loadTiltedImage(src, alt = PRESET_SESSION.tiltedImageAlt) {
-    return workspace.setImage(src, alt).then(({ width, height }) => {
-      tiltedCorners = normalizedToPixels(PRESET_SESSION.tiltedCornerPointsNormalized, width, height);
-      qPixelPoints = [...pPixelPoints];
-      tiltedImageLoaded = true;
-      published = false;
-      render();
-    });
+    return workspace.setImage(src, alt)
+      .then(({ width, height }) => {
+        tiltedCorners = normalizedToPixels(PRESET_SESSION.tiltedCornerPointsNormalized, width, height);
+        qPixelPoints = [...pPixelPoints];
+        tiltedImageLoaded = true;
+        published = false;
+        render();
+      })
+      .catch((err) => {
+        console.warn('Tilted image load fallback triggered:', err);
+        const width = 1000;
+        const height = 1000;
+        tiltedCorners = normalizedToPixels(PRESET_SESSION.tiltedCornerPointsNormalized, width, height);
+        qPixelPoints = [...pPixelPoints];
+        tiltedImageLoaded = true;
+        published = false;
+        render();
+      });
   }
 
   // File Upload for Tilted Image (Phase 4+)
@@ -288,8 +312,8 @@ export function initPresetWorkflow({ onGoLive } = {}) {
         showOverlay: overlayVisible,
         scaleWidth: 6,
         scaleHeight: 6,
-        interactiveMode: currentPhase === 1 || currentPhase === 2,
-        draggablePoints: currentPhase === 2,
+        interactiveMode: true,
+        draggablePoints: currentPhase >= 2,
         pointPrefix: 'P'
       });
     } else {
@@ -304,8 +328,8 @@ export function initPresetWorkflow({ onGoLive } = {}) {
         showOverlay: overlayVisible,
         scaleWidth: 6,
         scaleHeight: 6,
-        interactiveMode: currentPhase === 4 || currentPhase === 5,
-        draggablePoints: currentPhase === 5,
+        interactiveMode: true,
+        draggablePoints: currentPhase >= 5,
         pointPrefix: 'Q',
         shadowPrefix: 'P'
       });

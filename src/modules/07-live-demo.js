@@ -381,8 +381,8 @@ function render() {
       showScale: topCorners.length === 4,
       scaleWidth: targetWidth,
       scaleHeight: targetHeight,
-      interactiveMode: currentPhase === 1 || currentPhase === 2,
-      draggablePoints: currentPhase === 2,
+      interactiveMode: true,
+      draggablePoints: currentPhase >= 2,
       pointPrefix: 'P'
     });
   } else {
@@ -395,8 +395,8 @@ function render() {
       showScale: tiltedCorners.length === 4,
       scaleWidth: targetWidth,
       scaleHeight: targetHeight,
-      interactiveMode: currentPhase === 4 || currentPhase === 5,
-      draggablePoints: currentPhase === 5,
+      interactiveMode: true,
+      draggablePoints: currentPhase >= 5,
       pointPrefix: 'Q',
       shadowPrefix: 'P'
     });

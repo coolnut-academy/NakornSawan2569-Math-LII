@@ -10,26 +10,252 @@ function pointString(points) {
   return points.map((point) => point.join(',')).join(' ');
 }
 
-export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
+export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCorner } = {}) {
   if (!container) throw new Error('Image workspace container is required.');
 
   container.classList.add('image-workspace');
   container.innerHTML = `
     <div class="workspace-media">
-      <img class="workspace-image" alt="" draggable="false">
-      <svg class="workspace-overlay" role="img" aria-label="Calibration and measurement overlay"></svg>
+      <div class="workspace-toolbar">
+        <button class="zoom-btn" data-action="toggle-hand" type="button" title="โหมดมือจับเลื่อนภาพ (Hand Tool)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v6"/><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 0 1 2 2v4a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+        </button>
+        <span class="toolbar-divider"></span>
+        <button class="zoom-btn" data-action="zoom-in" type="button" title="ขยายภาพ (+)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </button>
+        <span class="zoom-badge">100%</span>
+        <button class="zoom-btn" data-action="zoom-out" type="button" title="ย่อภาพ (-)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </button>
+        <button class="zoom-btn" data-action="zoom-reset" type="button" title="รีเซ็ตย่อ/ขยาย">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
+      </div>
+      <div class="workspace-stage">
+        <img class="workspace-image" alt="" draggable="false">
+        <svg class="workspace-overlay" role="img" aria-label="Calibration and measurement overlay"></svg>
+      </div>
+      <div class="workspace-loupe" hidden>
+        <canvas class="loupe-canvas" width="140" height="140"></canvas>
+        <div class="loupe-tag">C1</div>
+      </div>
       <div class="workspace-empty">เลือกภาพหรือเปิดกล้องเพื่อเริ่มต้น</div>
     </div>
   `;
 
   const media = container.querySelector('.workspace-media');
+  const stage = container.querySelector('.workspace-stage');
   const image = container.querySelector('.workspace-image');
   const overlay = container.querySelector('.workspace-overlay');
   const empty = container.querySelector('.workspace-empty');
+  const badge = container.querySelector('.zoom-badge');
+  const loupe = container.querySelector('.workspace-loupe');
+  const loupeCanvas = container.querySelector('.loupe-canvas');
+  const loupeTag = container.querySelector('.loupe-tag');
+
   let width = 0;
   let height = 0;
   let interactive = false;
+  let pointsDraggable = false;
+  let lastRenderOptions = null;
   let draggedItem = null;
+  let dragStartPt = null;
+  let dragStartEventPt = null;
+
+  // Zoom & Pan & Hand state
+  let zoomScale = 1.0;
+  let panX = 0;
+  let panY = 0;
+  let isHandMode = false;
+  let isPanning = false;
+  let panStartX = 0;
+  let panStartY = 0;
+  let initialPinchDist = null;
+  let initialPinchZoom = 1.0;
+
+  function updateZoomTransform() {
+    zoomScale = Math.max(1.0, Math.min(4.0, zoomScale));
+    if (zoomScale <= 1.001) {
+      panX = 0;
+      panY = 0;
+      stage.style.transform = '';
+      media.classList.remove('is-zoomed');
+    } else {
+      stage.style.transform = `scale(${zoomScale}) translate(${panX / zoomScale}px, ${panY / zoomScale}px)`;
+      media.classList.add('is-zoomed');
+    }
+    if (badge) badge.textContent = `${Math.round(zoomScale * 100)}%`;
+  }
+
+  // Prevent right-click context menu on media box for smooth right-click panning
+  media.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  container.querySelectorAll('.zoom-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = btn.dataset.action;
+      if (action === 'toggle-hand') {
+        isHandMode = !isHandMode;
+        btn.classList.toggle('active', isHandMode);
+        media.classList.toggle('is-hand-mode', isHandMode);
+      } else if (action === 'zoom-in') {
+        zoomScale += 0.25;
+        updateZoomTransform();
+      } else if (action === 'zoom-out') {
+        zoomScale -= 0.25;
+        updateZoomTransform();
+      } else if (action === 'zoom-reset') {
+        zoomScale = 1.0;
+        panX = 0;
+        panY = 0;
+        updateZoomTransform();
+      }
+    });
+  });
+
+  media.addEventListener('wheel', (e) => {
+    if (!width || !height) return;
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.15 : -0.15;
+    zoomScale += delta;
+    updateZoomTransform();
+  }, { passive: false });
+
+  // Pan interaction (Right-click drag, Hand mode left-click drag, Middle click)
+  media.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.workspace-toolbar')) return;
+
+    const isRightClick = e.button === 2;
+    const isMiddleClick = e.button === 1;
+    const isPointTarget = !!e.target.closest('.calibration-point, .measurement-point');
+
+    if (isRightClick || isMiddleClick || (isHandMode && !isPointTarget)) {
+      e.preventDefault();
+      isPanning = true;
+      panStartX = e.clientX - panX;
+      panStartY = e.clientY - panY;
+      media.classList.add('is-panning');
+      media.setPointerCapture?.(e.pointerId);
+    }
+  });
+
+  media.addEventListener('pointermove', (e) => {
+    if (isPanning) {
+      e.preventDefault();
+      panX = e.clientX - panStartX;
+      panY = e.clientY - panStartY;
+      updateZoomTransform();
+    }
+  });
+
+  const stopPanning = (e) => {
+    if (isPanning) {
+      isPanning = false;
+      media.classList.remove('is-panning');
+      media.releasePointerCapture?.(e.pointerId);
+    }
+  };
+
+  media.addEventListener('pointerup', stopPanning);
+  media.addEventListener('pointercancel', stopPanning);
+
+  // Touch Pinch-to-Zoom and 2-Finger Pan support for Tablets/Mobile
+  media.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      isPanning = true;
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      initialPinchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      initialPinchZoom = zoomScale;
+      const midX = (t1.clientX + t2.clientX) / 2;
+      const midY = (t1.clientY + t2.clientY) / 2;
+      panStartX = midX - panX;
+      panStartY = midY - panY;
+    }
+  }, { passive: false });
+
+  media.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && initialPinchDist) {
+      e.preventDefault();
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      zoomScale = initialPinchZoom * (dist / initialPinchDist);
+
+      const midX = (t1.clientX + t2.clientX) / 2;
+      const midY = (t1.clientY + t2.clientY) / 2;
+      panX = midX - panStartX;
+      panY = midY - panStartY;
+
+      updateZoomTransform();
+    }
+  }, { passive: false });
+
+  media.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+      initialPinchDist = null;
+      isPanning = false;
+    }
+  });
+
+  // Precision Loupe (Magnifier Glass) Functionality
+  function updateLoupe(point, labelText, clientX, clientY) {
+    if (!loupe || !loupeCanvas || !image.naturalWidth) return;
+
+    loupe.hidden = false;
+    const mediaRect = media.getBoundingClientRect();
+
+    const loupeW = 140;
+    const loupeH = 140;
+    let left = clientX - mediaRect.left - loupeW / 2;
+    let top = clientY - mediaRect.top - loupeH - 24;
+
+    if (top < 10) top = clientY - mediaRect.top + 24;
+    left = Math.max(10, Math.min(mediaRect.width - loupeW - 10, left));
+
+    loupe.style.transform = `translate(${left}px, ${top}px)`;
+    if (loupeTag) loupeTag.textContent = labelText;
+
+    const ctx = loupeCanvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.clearRect(0, 0, loupeW, loupeH);
+
+    const scaleX = image.naturalWidth / width;
+    const scaleY = image.naturalHeight / height;
+    const imgX = point[0] * scaleX;
+    const imgY = point[1] * scaleY;
+
+    // Crop region with 2.5x zoom multiplier
+    const cropW = (loupeW / 2.5) * (image.naturalWidth / mediaRect.width) / (zoomScale || 1);
+    const cropH = (loupeH / 2.5) * (image.naturalHeight / mediaRect.height) / (zoomScale || 1);
+    const cropX = imgX - cropW / 2;
+    const cropY = imgY - cropH / 2;
+
+    try {
+      ctx.drawImage(image, cropX, cropY, cropW, cropH, 0, 0, loupeW, loupeH);
+    } catch {}
+
+    // Precision Crosshair overlay
+    ctx.strokeStyle = '#d62839';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(loupeW / 2, loupeH / 2, 7, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(loupeW / 2, 0); ctx.lineTo(loupeW / 2, loupeH);
+    ctx.moveTo(0, loupeH / 2); ctx.lineTo(loupeW, loupeH / 2);
+    ctx.stroke();
+  }
+
+  function hideLoupe() {
+    if (loupe) loupe.hidden = true;
+  }
 
   function eventToImagePoint(event) {
     const rect = overlay.getBoundingClientRect();
@@ -45,25 +271,52 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
 
     if (cornerTarget && onMoveCorner && cornerTarget.dataset.cornerIndex !== undefined) {
       event.preventDefault();
-      draggedItem = { type: 'corner', index: Number(cornerTarget.dataset.cornerIndex) };
+      const idx = Number(cornerTarget.dataset.cornerIndex);
+      const currentPt = lastRenderOptions?.corners?.[idx];
+      draggedItem = { type: 'corner', index: idx };
+      dragStartEventPt = eventToImagePoint(event);
+      dragStartPt = currentPt ? [currentPt[0], currentPt[1]] : [...dragStartEventPt];
+
       overlay.setPointerCapture?.(event.pointerId);
       overlay.classList.add('is-dragging-point');
+      updateLoupe(dragStartPt, `C${idx + 1}`, event.clientX, event.clientY);
       return;
     }
 
     if (pointsDraggable && pointTarget && onMovePoint && pointTarget.dataset.pointIndex !== undefined) {
       event.preventDefault();
-      draggedItem = { type: 'point', index: Number(pointTarget.dataset.pointIndex) };
+      const idx = Number(pointTarget.dataset.pointIndex);
+      const currentPt = lastRenderOptions?.dataPoints?.[idx];
+      draggedItem = { type: 'point', index: idx };
+      dragStartEventPt = eventToImagePoint(event);
+      dragStartPt = currentPt ? [currentPt[0], currentPt[1]] : [...dragStartEventPt];
+
       overlay.setPointerCapture?.(event.pointerId);
       overlay.classList.add('is-dragging-point');
+      const prefix = lastRenderOptions?.pointPrefix || 'P';
+      updateLoupe(dragStartPt, `${prefix}${idx + 1}`, event.clientX, event.clientY);
       return;
     }
   });
 
   overlay.addEventListener('pointermove', (event) => {
-    if (!draggedItem) return;
+    if (!draggedItem || !dragStartPt || !dragStartEventPt) return;
     event.preventDefault();
-    const pt = eventToImagePoint(event);
+    const currentEventPt = eventToImagePoint(event);
+    const dx = currentEventPt[0] - dragStartEventPt[0];
+    const dy = currentEventPt[1] - dragStartEventPt[1];
+
+    const pt = [
+      Math.max(0, Math.min(width, dragStartPt[0] + dx)),
+      Math.max(0, Math.min(height, dragStartPt[1] + dy))
+    ];
+
+    const label = draggedItem.type === 'corner'
+      ? `C${draggedItem.index + 1}`
+      : `${lastRenderOptions?.pointPrefix || 'P'}${draggedItem.index + 1}`;
+
+    updateLoupe(pt, label, event.clientX, event.clientY);
+
     if (draggedItem.type === 'corner' && onMoveCorner) {
       onMoveCorner(draggedItem.index, pt, { committed: false });
     } else if (draggedItem.type === 'point' && onMovePoint) {
@@ -72,13 +325,26 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
   });
 
   overlay.addEventListener('pointerup', (event) => {
-    if (draggedItem) {
+    hideLoupe();
+    if (draggedItem && dragStartPt && dragStartEventPt) {
       event.preventDefault();
+      const currentEventPt = eventToImagePoint(event);
+      const dx = currentEventPt[0] - dragStartEventPt[0];
+      const dy = currentEventPt[1] - dragStartEventPt[1];
+
+      const pt = [
+        Math.max(0, Math.min(width, dragStartPt[0] + dx)),
+        Math.max(0, Math.min(height, dragStartPt[1] + dy))
+      ];
+
       const item = draggedItem;
       draggedItem = null;
+      dragStartPt = null;
+      dragStartEventPt = null;
+
       overlay.releasePointerCapture?.(event.pointerId);
       overlay.classList.remove('is-dragging-point');
-      const pt = eventToImagePoint(event);
+
       if (item.type === 'corner' && onMoveCorner) {
         onMoveCorner(item.index, pt, { committed: true });
       } else if (item.type === 'point' && onMovePoint) {
@@ -91,10 +357,22 @@ export function createImageWorkspace(container, { onPoint, onMovePoint } = {}) {
   });
 
   overlay.addEventListener('pointercancel', (event) => {
-    if (draggedItem) {
+    hideLoupe();
+    if (draggedItem && dragStartPt && dragStartEventPt) {
+      const currentEventPt = eventToImagePoint(event);
+      const dx = currentEventPt[0] - dragStartEventPt[0];
+      const dy = currentEventPt[1] - dragStartEventPt[1];
+
+      const pt = [
+        Math.max(0, Math.min(width, dragStartPt[0] + dx)),
+        Math.max(0, Math.min(height, dragStartPt[1] + dy))
+      ];
+
       const item = draggedItem;
       draggedItem = null;
-      const pt = eventToImagePoint(event);
+      dragStartPt = null;
+      dragStartEventPt = null;
+
       if (item.type === 'corner' && onMoveCorner) {
         onMoveCorner(item.index, pt, { committed: true });
       } else if (item.type === 'point' && onMovePoint) {

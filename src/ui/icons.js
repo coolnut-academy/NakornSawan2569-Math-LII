@@ -42,6 +42,7 @@ export function refreshIcons(root = document) {
     svg.setAttribute('stroke-linecap', 'round');
     svg.setAttribute('stroke-linejoin', 'round');
     svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('data-lucide', name);
     svg.classList.add('lucide', `lucide-${name}`);
 
     nodes.forEach(([tag, attributes]) => {
