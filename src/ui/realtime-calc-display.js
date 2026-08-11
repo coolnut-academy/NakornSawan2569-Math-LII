@@ -48,7 +48,7 @@ export function createRealtimeCalcPanel(containerId) {
 
       pSubHtml = `
         <div class="calc-block">
-          <div class="calc-block-title"><strong>1) คำนวณ LII(P) จากจุดอ้างอิง (Top-Down):</strong></div>
+          <div class="calc-block-title"><strong>1) คำนวณ LII(P) — Polyline Path Length จากจุดอ้างอิง (Top-Down):</strong></div>
           ${segs}
           <div class="calc-sub-total">
             <span>LII(P) = Σ P<sub>i</sub>P<sub>i+1</sub> = ${pSegments.map(s => s.toFixed(4)).join(' + ')}</span>
@@ -74,7 +74,7 @@ export function createRealtimeCalcPanel(containerId) {
 
       qSubHtml = `
         <div class="calc-block" style="margin-top:12px">
-          <div class="calc-block-title"><strong>2) คำนวณ LII(Q) จากจุดวัดจริง (Tilted View หลัง H⁻¹):</strong></div>
+          <div class="calc-block-title"><strong>2) คำนวณ LII(Q) — Polyline Path Length จากจุดวัดจริง (Tilted View หลัง H⁻¹):</strong></div>
           ${segs}
           <div class="calc-sub-total">
             <span>LII(Q) = Σ Q<sub>i</sub>Q<sub>i+1</sub> = ${qSegments.map(s => s.toFixed(4)).join(' + ')}</span>
@@ -102,7 +102,7 @@ export function createRealtimeCalcPanel(containerId) {
         <div class="realtime-calc-header">
           <div class="realtime-calc-title">
             <i data-lucide="calculator"></i>
-            <span>เปรียบเทียบ LII Real-time (P vs Q)</span>
+            <span>เปรียบเทียบ LII Polyline Real-time (P vs Q)</span>
           </div>
           <button class="btn btn-ghost btn-xs toggle-detail-btn" type="button" aria-expanded="${isExpanded}">
             <span>${isExpanded ? 'ซ่อนการแทนค่า' : 'ดูการแทนค่าอย่างละเอียด'}</span>
@@ -112,11 +112,11 @@ export function createRealtimeCalcPanel(containerId) {
 
         <div class="realtime-calc-summary">
           <div class="metric-mini">
-            <label>LII(P) อ้างอิง</label>
+            <label>LII(P) Polyline อ้างอิง</label>
             <div class="value">${hasP ? fmt(pLii, 4) + ' cm' : '—'}</div>
           </div>
           <div class="metric-mini">
-            <label>LII(Q) จุดวัดจริง</label>
+            <label>LII(Q) Polyline จุดวัดจริง</label>
             <div class="value highlight-val">${hasQ ? fmt(qLii, 4) + ' cm' : '—'}</div>
           </div>
           <div class="metric-mini">

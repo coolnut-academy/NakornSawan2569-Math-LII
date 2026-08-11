@@ -17,8 +17,9 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
   container.innerHTML = `
     <div class="workspace-media">
       <div class="workspace-toolbar">
-        <button class="zoom-btn" data-action="toggle-hand" type="button" title="โหมดมือจับเลื่อนภาพ (Hand Tool)">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v6"/><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 0 1 2 2v4a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+        <button class="zoom-btn mode-pill-btn" data-action="toggle-hand" type="button" title="สลับโหมด: ปรับจุด / เลื่อนภาพ">
+          <span class="mode-label-point">📍 โหมดปรับจุด</span>
+          <span class="mode-label-hand" hidden>✋ โหมดเลื่อนภาพ</span>
         </button>
         <span class="toolbar-divider"></span>
         <button class="zoom-btn" data-action="zoom-in" type="button" title="ขยายภาพ (+)">
@@ -37,8 +38,21 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
         <svg class="workspace-overlay" role="img" aria-label="Calibration and measurement overlay"></svg>
       </div>
       <div class="workspace-loupe" hidden>
-        <canvas class="loupe-canvas" width="140" height="140"></canvas>
+        <canvas class="loupe-canvas" width="160" height="160"></canvas>
         <div class="loupe-tag">C1</div>
+      </div>
+      <div class="workspace-nudge-pad" hidden>
+        <div class="nudge-header">
+          <span class="nudge-title">ปรับจุด</span>
+          <button class="nudge-step-btn" type="button" title="สลับระยะขยับ (1px / 5px)">Step 1px</button>
+          <button class="nudge-close-btn" type="button" title="ปิด">✕</button>
+        </div>
+        <div class="nudge-dpad">
+          <button class="nudge-btn nudge-up" data-dir="up" type="button" aria-label="ขยับขึ้น">▲</button>
+          <button class="nudge-btn nudge-left" data-dir="left" type="button" aria-label="ขยับซ้าย">◄</button>
+          <button class="nudge-btn nudge-right" data-dir="right" type="button" aria-label="ขยับขวา">►</button>
+          <button class="nudge-btn nudge-down" data-dir="down" type="button" aria-label="ขยับลง">▼</button>
+        </div>
       </div>
       <div class="workspace-empty">เลือกภาพหรือเปิดกล้องเพื่อเริ่มต้น</div>
     </div>
@@ -99,6 +113,12 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
         isHandMode = !isHandMode;
         btn.classList.toggle('active', isHandMode);
         media.classList.toggle('is-hand-mode', isHandMode);
+        const pointLabel = btn.querySelector('.mode-label-point');
+        const handLabel = btn.querySelector('.mode-label-hand');
+        if (pointLabel && handLabel) {
+          pointLabel.hidden = isHandMode;
+          handLabel.hidden = !isHandMode;
+        }
       } else if (action === 'zoom-in') {
         zoomScale += 0.25;
         updateZoomTransform();
@@ -200,19 +220,108 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
     }
   });
 
+  // Touch & Precision Nudge Pad state
+  let activeSelectedPoint = null;
+  let nudgeStep = 1;
+
+  const nudgePad = container.querySelector('.workspace-nudge-pad');
+  const nudgeTitle = container.querySelector('.nudge-title');
+  const nudgeStepBtn = container.querySelector('.nudge-step-btn');
+  const nudgeCloseBtn = container.querySelector('.nudge-close-btn');
+
+  function updateNudgePadState() {
+    if (!nudgePad) return;
+    if (!activeSelectedPoint) {
+      nudgePad.hidden = true;
+      return;
+    }
+    nudgePad.hidden = false;
+    const isCorner = activeSelectedPoint.type === 'corner';
+    const idx = activeSelectedPoint.index;
+    const prefix = isCorner ? 'C' : (lastRenderOptions?.pointPrefix || 'P');
+    const pt = isCorner ? lastRenderOptions?.corners?.[idx] : lastRenderOptions?.dataPoints?.[idx];
+    if (nudgeTitle) {
+      nudgeTitle.textContent = pt ? `${prefix}${idx + 1} (${pt[0].toFixed(1)}, ${pt[1].toFixed(1)})` : `${prefix}${idx + 1}`;
+    }
+    if (nudgeStepBtn) {
+      nudgeStepBtn.textContent = `Step ${nudgeStep}px`;
+    }
+  }
+
+  function moveSelectedPointByNudge(dx, dy) {
+    if (!activeSelectedPoint || !width || !height) return;
+    const isCorner = activeSelectedPoint.type === 'corner';
+    const idx = activeSelectedPoint.index;
+    const callback = isCorner ? onMoveCorner : onMovePoint;
+    if (!callback) return;
+
+    const currentPt = isCorner ? lastRenderOptions?.corners?.[idx] : lastRenderOptions?.dataPoints?.[idx];
+    if (!currentPt) return;
+
+    const overlayRect = overlay.getBoundingClientRect();
+    const scale = overlayRect.width > 0 ? (width / overlayRect.width) : 1;
+    const shiftX = dx * nudgeStep * scale;
+    const shiftY = dy * nudgeStep * scale;
+
+    const newPt = [
+      Math.max(0, Math.min(width, currentPt[0] + shiftX)),
+      Math.max(0, Math.min(height, currentPt[1] + shiftY))
+    ];
+
+    callback(idx, newPt, { committed: true });
+    updateNudgePadState();
+  }
+
+  if (nudgeStepBtn) {
+    nudgeStepBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      nudgeStep = nudgeStep === 1 ? 5 : 1;
+      updateNudgePadState();
+    });
+  }
+
+  if (nudgeCloseBtn) {
+    nudgeCloseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      activeSelectedPoint = null;
+      updateNudgePadState();
+    });
+  }
+
+  container.querySelectorAll('.nudge-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const dir = btn.dataset.dir;
+      const dirMap = {
+        up: [0, -1],
+        down: [0, 1],
+        left: [-1, 0],
+        right: [1, 0]
+      };
+      if (dirMap[dir]) {
+        moveSelectedPointByNudge(dirMap[dir][0], dirMap[dir][1]);
+      }
+    });
+  });
+
   // Precision Loupe (Magnifier Glass) Functionality
-  function updateLoupe(point, labelText, clientX, clientY) {
+  function updateLoupe(point, labelText, clientX, clientY, isTouch = false) {
     if (!loupe || !loupeCanvas || !image.naturalWidth) return;
 
     loupe.hidden = false;
     const mediaRect = media.getBoundingClientRect();
 
-    const loupeW = 140;
-    const loupeH = 140;
-    let left = clientX - mediaRect.left - loupeW / 2;
-    let top = clientY - mediaRect.top - loupeH - 24;
+    const loupeW = isTouch ? 160 : 140;
+    const loupeH = isTouch ? 160 : 140;
+    if (loupeCanvas.width !== loupeW || loupeCanvas.height !== loupeH) {
+      loupeCanvas.width = loupeW;
+      loupeCanvas.height = loupeH;
+    }
 
-    if (top < 10) top = clientY - mediaRect.top + 24;
+    let left = clientX - mediaRect.left - loupeW / 2;
+    let top = clientY - mediaRect.top - loupeH - (isTouch ? 65 : 24);
+
+    if (top < 10) top = clientY - mediaRect.top + (isTouch ? 55 : 24);
     left = Math.max(10, Math.min(mediaRect.width - loupeW - 10, left));
 
     loupe.style.transform = `translate(${left}px, ${top}px)`;
@@ -288,17 +397,20 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
     const cornerTarget = event.target.closest?.('.calibration-point');
     const pointTarget = event.target.closest?.('.measurement-point');
 
+    const isTouch = event.pointerType === 'touch';
     if (cornerTarget && onMoveCorner && cornerTarget.dataset.cornerIndex !== undefined) {
       event.preventDefault();
       const idx = Number(cornerTarget.dataset.cornerIndex);
       const currentPt = lastRenderOptions?.corners?.[idx];
       draggedItem = { type: 'corner', index: idx };
+      activeSelectedPoint = { type: 'corner', index: idx };
+      updateNudgePadState();
       dragStartEventPt = eventToImagePoint(event);
       dragStartPt = currentPt ? [currentPt[0], currentPt[1]] : [...dragStartEventPt];
 
       overlay.setPointerCapture?.(event.pointerId);
       overlay.classList.add('is-dragging-point');
-      updateLoupe(dragStartPt, `C${idx + 1}`, event.clientX, event.clientY);
+      updateLoupe(dragStartPt, `C${idx + 1}`, event.clientX, event.clientY, isTouch);
       return;
     }
 
@@ -307,13 +419,15 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
       const idx = Number(pointTarget.dataset.pointIndex);
       const currentPt = lastRenderOptions?.dataPoints?.[idx];
       draggedItem = { type: 'point', index: idx };
+      activeSelectedPoint = { type: 'point', index: idx };
+      updateNudgePadState();
       dragStartEventPt = eventToImagePoint(event);
       dragStartPt = currentPt ? [currentPt[0], currentPt[1]] : [...dragStartEventPt];
 
       overlay.setPointerCapture?.(event.pointerId);
       overlay.classList.add('is-dragging-point');
       const prefix = lastRenderOptions?.pointPrefix || 'P';
-      updateLoupe(dragStartPt, `${prefix}${idx + 1}`, event.clientX, event.clientY);
+      updateLoupe(dragStartPt, `${prefix}${idx + 1}`, event.clientX, event.clientY, isTouch);
       return;
     }
   });
@@ -330,11 +444,12 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
       Math.max(0, Math.min(height, dragStartPt[1] + dy))
     ];
 
+    const isTouch = event.pointerType === 'touch';
     const label = draggedItem.type === 'corner'
       ? `C${draggedItem.index + 1}`
       : `${lastRenderOptions?.pointPrefix || 'P'}${draggedItem.index + 1}`;
 
-    updateLoupe(pt, label, event.clientX, event.clientY);
+    updateLoupe(pt, label, event.clientX, event.clientY, isTouch);
 
     if (draggedItem.type === 'corner' && onMoveCorner) {
       onMoveCorner(draggedItem.index, pt, { committed: false });
@@ -600,8 +715,9 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
       const title = svgNode('title');
       title.textContent = `C${index + 1}: drag to adjust`;
       group.appendChild(title);
+      const hitRadius = Math.max(pointRadius * 3.2, 22);
       group.appendChild(svgNode('circle', {
-        cx: point[0], cy: point[1], r: pointRadius * 2.2, class: 'point-hit-target'
+        cx: point[0], cy: point[1], r: hitRadius, class: 'point-hit-target'
       }));
       group.appendChild(svgNode('circle', {
         cx: point[0], cy: point[1], r: pointRadius * 1.45, class: 'point-halo'
@@ -694,8 +810,9 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
       const title = svgNode('title');
       title.textContent = `${pointPrefix}${index + 1}: drag to adjust`;
       group.appendChild(title);
+      const hitRadius = Math.max(pointRadius * 3.2, 22);
       group.appendChild(svgNode('circle', {
-        cx: point[0], cy: point[1], r: pointRadius * 2, class: 'point-hit-target'
+        cx: point[0], cy: point[1], r: hitRadius, class: 'point-hit-target'
       }));
       group.appendChild(svgNode('circle', {
         cx: point[0], cy: point[1], r: pointRadius * 1.35, class: 'point-halo'

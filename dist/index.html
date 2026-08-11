@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <link rel="icon" href="data:," />
   <meta name="color-scheme" content="light dark" />
-  <meta name="description" content="LII Dental Studio — ทดลองสอบเทียบและวัด Little’s Irregularity Index จากภาพถ่าย" />
+  <meta name="description" content="LII Dental Studio — ทดลองสอบเทียบและวัดค่า LII (Polyline Path Length) จากภาพถ่ายฟัน ผ่านการ calibrate ด้วย Homography" />
   <title>LII Dental Studio | Photo Measurement</title>
   
   <!-- KaTeX for Vector Mathematical Typography -->
@@ -13,8 +13,8 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}] });"></script>
   
-  <script type="module" crossorigin src="./assets/index-Os3rHfoH.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-u4dlNajQ.css">
+  <script type="module" crossorigin src="./assets/index-BQWYgFuN.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-B0aGFjfK.css">
 </head>
 <body>
   <header class="site-header">
@@ -138,16 +138,16 @@
       <section class="section" id="lii">
         <div class="container">
           <div class="section-title">
-            <div><div class="eyebrow">Module 01</div><h2>LII Measurement</h2><p class="lead">พิกัดจริงบนระนาบ calibration และผลรวมระยะ 5 ช่วงจาก Q ที่ยืนยันล่าสุด</p></div>
+            <div><div class="eyebrow">Module 01</div><h2>LII Measurement (Polyline)</h2><p class="lead">พิกัดจริงบนระนาบ calibration และผลรวมระยะ 5 ช่วงจาก Q ที่ยืนยันล่าสุด</p></div>
             <button class="icon-text-btn" data-guide-toggle="guide01" type="button"><i data-lucide="circle-help"></i><span>วิธีใช้งาน</span></button>
           </div>
 
           <div id="guide01" class="guide-box" hidden style="margin-bottom:24px">
             <h4>วิธีใช้งาน Module 01: LII Builder</h4>
             <ol class="guide-steps">
-              <li><strong>แนวคิดหลัก:</strong> ดัชนี LII คือการนำระยะห่างระหว่างจุดที่อยู่ติดกัน 5 ช่วง ($P_1P_2 + P_2P_3 + P_3P_4 + P_4P_5 + P_5P_6$) มาบวกกัน</li>
+              <li><strong>แนวคิดหลัก:</strong> ค่า LII ในโปรเจกต์นี้ คือ <em>ผลรวมระยะ Euclidean ระหว่างจุด P₁–P₆ ที่อยู่ติดกัน 5 ช่วง (polyline path length)</em> ซึ่งแตกต่างจาก Little's Irregularity Index ดั้งเดิมที่วัด displacement ระหว่างฟัน</li>
               <li><strong>แหล่งข้อมูล:</strong> โมดูลนี้รอ Q1-Q6 ที่ยืนยันจากหน้านี้และไม่สร้าง dataset จำลองขึ้นเอง</li>
-              <li><strong>ผลลัพธ์:</strong> แสดงพิกัดหน่วย cm ระยะทั้ง 5 ช่วง และค่า LII ของ snapshot ที่ยืนยัน</li>
+              <li><strong>ผลลัพธ์:</strong> แสดงพิกัดหน่วย cm ระยะทั้ง 5 ช่วง และค่า LII (Polyline) ของ snapshot ที่ยืนยัน</li>
             </ol>
           </div>
 
@@ -172,7 +172,7 @@
               <div class="card-head"><div><h3>Confirmed calculation</h3><p>คำนวณจาก snapshot เดียวกับ Module 2–5</p></div></div>
               <div class="formula big">$$\text{LII} = \sum_{i=1}^{5} \sqrt{(x_{i+1}-x_i)^2 + (y_{i+1}-y_i)^2}$$</div>
               <div class="grid-3" style="margin:16px 0">
-                <div class="metric strong"><label>Confirmed LII</label><div class="value" id="liveLii">—</div></div>
+                <div class="metric strong"><label>Confirmed LII (Polyline)</label><div class="value" id="liveLii">—</div></div>
                 <div class="metric"><label>Reference \(L_0\)</label><div class="value" id="refLii">—</div></div>
                 <div class="metric"><label>\(\Delta\) from reference</label><div class="value" id="builderDelta">—</div></div>
               </div>
@@ -225,7 +225,7 @@
             </article>
             <article class="card card-pad">
               <h3>ทำไม \(H^{-1}\) จึงสำคัญ?</h3>
-              <p class="muted small">ในกรณีอุดมคติ \(H^{-1}H = I\) ดังนั้นการประยุกต์ใช้เมทริกซ์ผกผันทำให้สามารถย้อนพิกัดกลับสู่ระนาบอ้างอิงและคำนวณ LII ได้อย่างถูกต้อง</p>
+              <p class="muted small">ในกรณีอุดมคติ \(H^{-1}H = I\) ดังนั้นการประยุกต์ใช้เมทริกซ์ผกผันทำให้สามารถย้อนพิกัดกลับสู่ระนาบอ้างอิงและคำนวณ LII (polyline path length) ได้อย่างถูกต้อง</p>
             </article>
           </div>
         </div>
@@ -317,7 +317,7 @@
             <div><div class="eyebrow">Module 05</div><h2>Segment Analysis</h2><p class="lead">แจกแจงระยะ Q1→Q6 จากภาพจริงเป็น pixel และระยะหลัง calibration เป็น cm</p></div>
           </div>
           <div class="card card-pad">
-            <div class="coord-table-wrap" style="max-height:520px"><table class="result-table"><thead><tr><th>#</th><th>Segment</th><th>Image distance</th><th>Calibrated distance</th><th>Cumulative LII</th><th>Share</th></tr></thead><tbody id="resultsBody"></tbody></table></div>
+            <div class="coord-table-wrap" style="max-height:520px"><table class="result-table"><thead><tr><th>#</th><th>Segment</th><th>Image distance</th><th>Calibrated distance</th><th>Cumulative LII (Polyline)</th><th>Share</th></tr></thead><tbody id="resultsBody"></tbody></table></div>
           </div>
         </div>
       </section>
@@ -443,7 +443,7 @@
     <div class="container" style="display:flex;justify-content:space-between;gap:30px">
       <div>
         <strong>LII Dental Studio</strong>
-        <p class="muted small" style="max-width:650px;margin-top:8px">Interactive mathematical proof of concept for a homography-based model and error-bound analysis of Little’s Irregularity Index.</p>
+        <p class="muted small" style="max-width:650px;margin-top:8px">Interactive mathematical proof of concept for a homography-based model and error-bound analysis. ค่า LII ในเครื่องมือนี้คือ Polyline Path Length (ผลรวมระยะ 5 ช่วง) ไม่ใช่ Little’s Irregularity Index แบบ clinical displacement</p>
       </div>
     </div>
   </footer>

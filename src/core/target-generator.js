@@ -177,7 +177,7 @@ export function generateTargetSVG(width = 600, height = 600) {
   title.setAttribute('font-size', '14');
   title.setAttribute('font-weight', 'bold');
   title.setAttribute('fill', '#0f172a');
-  title.textContent = 'LII CALIBRATION TARGET SHEET (6cm × 6cm GRID)';
+  title.textContent = 'LII POLYLINE CALIBRATION TARGET (6cm × 6cm GRID)';
   svg.appendChild(title);
 
   return svg;
@@ -306,7 +306,7 @@ export function generateDentalGuideSVG(width = 600, height = 450) {
   title.setAttribute('x', '300'); title.setAttribute('y', '24');
   title.setAttribute('text-anchor', 'middle'); title.setAttribute('font-size', '13');
   title.setAttribute('font-weight', 'bold'); title.setAttribute('fill', '#0f172a');
-  title.textContent = 'DENTAL ARCH MODEL LANDMARK PLACEMENT (P1 – P6)';
+  title.textContent = 'POLYLINE LANDMARK PLACEMENT (P1 – P6 on incisal edge)';
   svg.appendChild(title);
 
   return svg;

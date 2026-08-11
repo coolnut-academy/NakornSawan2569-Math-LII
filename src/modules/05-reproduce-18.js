@@ -44,7 +44,7 @@ export function initReproduce18({ root, store }) {
     const total = document.createElement('tr');
     total.className = 'confirmed-result-total';
     total.innerHTML = `
-      <td colspan="3"><strong>รวม LII จาก 5 ช่วง</strong></td>
+      <td colspan="3"><strong>รวม LII (Polyline) จาก 5 ช่วง</strong></td>
       <td class="num"><strong>${fmt(result.recoveredLii, 4)} cm</strong></td>
       <td class="num"><strong>${fmt(cumulative, 4)} cm</strong></td>
       <td class="num"><strong>100%</strong></td>
