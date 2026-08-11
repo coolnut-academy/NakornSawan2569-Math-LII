@@ -223,14 +223,18 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
     ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, loupeW, loupeH);
 
-    const scaleX = image.naturalWidth / width;
-    const scaleY = image.naturalHeight / height;
-    const imgX = point[0] * scaleX;
-    const imgY = point[1] * scaleY;
+    const ctm = overlay.getScreenCTM?.();
+    const screenPixelsPerUnitX = ctm ? Math.hypot(ctm.a, ctm.b) : ((mediaRect.width / width) * (zoomScale || 1));
+    const screenPixelsPerUnitY = ctm ? Math.hypot(ctm.c, ctm.d) : ((mediaRect.height / height) * (zoomScale || 1));
+
+    const natScaleX = image.naturalWidth / width;
+    const natScaleY = image.naturalHeight / height;
+    const imgX = point[0] * natScaleX;
+    const imgY = point[1] * natScaleY;
 
     // Crop region with 2.5x zoom multiplier
-    const cropW = (loupeW / 2.5) * (image.naturalWidth / mediaRect.width) / (zoomScale || 1);
-    const cropH = (loupeH / 2.5) * (image.naturalHeight / mediaRect.height) / (zoomScale || 1);
+    const cropW = screenPixelsPerUnitX > 0 ? (loupeW / 2.5) / screenPixelsPerUnitX * natScaleX : 50;
+    const cropH = screenPixelsPerUnitY > 0 ? (loupeH / 2.5) / screenPixelsPerUnitY * natScaleY : 50;
     const cropX = imgX - cropW / 2;
     const cropY = imgY - cropH / 2;
 
@@ -258,6 +262,21 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
   }
 
   function eventToImagePoint(event) {
+    if (!width || !height) return [0, 0];
+    const ctm = overlay.getScreenCTM?.();
+    if (ctm) {
+      try {
+        const inverse = ctm.inverse();
+        const pt = overlay.createSVGPoint();
+        pt.x = event.clientX;
+        pt.y = event.clientY;
+        const transformed = pt.matrixTransform(inverse);
+        return [
+          Math.max(0, Math.min(width, transformed.x)),
+          Math.max(0, Math.min(height, transformed.y))
+        ];
+      } catch {}
+    }
     const rect = overlay.getBoundingClientRect();
     return [
       Math.max(0, Math.min(width, ((event.clientX - rect.left) / rect.width) * width)),
