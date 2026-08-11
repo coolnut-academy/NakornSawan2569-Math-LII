@@ -8,6 +8,7 @@ import { estimateHomography, applyHomography, validateQuadrilateral } from '../c
 import { inverse3 } from '../core/matrix.js';
 import { fmt, lii } from '../core/math.js';
 import { liveMeasurementStore } from '../core/measurement-store.js';
+import { PRESET_SESSION } from '../core/preset-session-data.js';
 import { createImageWorkspace } from '../ui/image-workspace.js';
 import { createRealtimeCalcPanel } from '../ui/realtime-calc-display.js';
 import { refreshIcons } from '../ui/icons.js';
@@ -126,9 +127,9 @@ async function loadWorkspaceImage(src, { sample = false } = {}) {
 
 async function loadSamplePerspectivePhoto() {
   if (currentPhase <= 3) {
-    await loadWorkspaceImage('./preset-dental-guide.png', { sample: true });
+    await loadWorkspaceImage(PRESET_SESSION.imageSrc, { sample: true });
   } else {
-    await loadWorkspaceImage('./preset-dental-guide-tilted.png', { sample: true });
+    await loadWorkspaceImage(PRESET_SESSION.tiltedImageSrc, { sample: true });
   }
 }
 
