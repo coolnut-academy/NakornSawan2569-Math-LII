@@ -487,55 +487,148 @@ h3 {
   transform-origin: center center;
 }
 
-.workspace-toolbar {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 10;
+/* ── Workspace Tool Tab Bar ── */
+.workspace-tool-tabs {
+  margin-top: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+[data-theme="dark"] .workspace-tool-tabs {
+  background: rgba(15, 23, 42, 0.65);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.tool-tab-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--line);
-  padding: 4px 6px;
-  border-radius: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  gap: 0;
+  border-bottom: 1px solid var(--line);
 }
 
-[data-theme="dark"] .workspace-toolbar {
-  background: rgba(24, 32, 39, 0.92);
-  border-color: var(--line);
+.workspace-tool-tabs.is-collapsed .tool-tab-bar {
+  border-bottom: none;
 }
 
+.tool-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.tool-tab:last-of-type {
+  border-right: none;
+}
+
+.tool-tab:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.tool-tab.active {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.tool-tab.is-empty {
+  opacity: 0.5;
+}
+
+.tool-tab-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.tool-tab-collapse {
+  width: 36px;
+  min-width: 36px;
+  padding: 8px 0;
+  border: none;
+  border-left: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.tool-tab-collapse:hover {
+  background: var(--surface-2);
+}
+
+.tool-tab-panels {
+  overflow: hidden;
+  transition: max-height 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.workspace-tool-tabs.is-collapsed .tool-tab-panels {
+  max-height: 0 !important;
+  border-top: none;
+}
+
+.tool-tab-panel {
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tool-tab-panel[data-panel="nudge"] {
+  gap: 12px;
+}
+
+/* Zoom controls inside tab panel */
 .zoom-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: transparent;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
   color: var(--text);
-  border-radius: 50%;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .zoom-btn:hover {
   background: var(--surface-3);
+  border-color: var(--blue);
 }
 
 .toolbar-divider {
   width: 1px;
-  height: 16px;
+  height: 20px;
   background: var(--line);
-  margin-inline: 2px;
+  margin-inline: 4px;
 }
 
 .zoom-btn.active {
   background: rgba(0, 119, 182, 0.15);
   color: var(--blue);
+  border-color: var(--blue);
 }
 
 .workspace-media.is-hand-mode {
@@ -587,95 +680,22 @@ h3 {
 
 .zoom-badge {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   padding-inline: 6px;
   color: var(--blue);
   user-select: none;
 }
 
-/* Precision Nudge D-Pad for iPad & Touch Devices */
-.workspace-nudge-pad {
-  position: absolute;
-  bottom: 14px;
-  right: 14px;
-  z-index: 60;
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  padding: 10px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-  color: #fff;
-  user-select: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 144px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-[data-theme="light"] .workspace-nudge-pad {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(0, 0, 0, 0.12);
-  color: #0f172a;
-}
-
-.workspace-nudge-pad.is-minimized {
-  width: auto;
-  padding: 0;
-  border-radius: 20px;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
-.workspace-nudge-pad.is-minimized .nudge-header,
-.workspace-nudge-pad.is-minimized .nudge-dpad {
-  display: none !important;
-}
-
-.nudge-chip-btn {
-  display: none;
-}
-
-.workspace-nudge-pad.is-minimized .nudge-chip-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(8px);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 18px;
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-[data-theme="light"] .workspace-nudge-pad.is-minimized .nudge-chip-btn {
-  background: rgba(255, 255, 255, 0.94);
-  color: #0f172a;
-  border-color: rgba(0, 0, 0, 0.15);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-}
-
-.nudge-chip-expand {
-  font-size: 10px;
-  color: var(--blue);
-}
-
+/* ── Nudge D-Pad (inside tab panel) ── */
 .nudge-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  font-size: 11px;
+  gap: 8px;
+  font-size: 12px;
   font-weight: 700;
+  flex: 1;
+  min-width: 0;
 }
 
 .nudge-title {
@@ -683,68 +703,70 @@ h3 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--text);
 }
 
 .nudge-step-btn {
-  background: rgba(37, 99, 235, 0.25);
-  color: #60a5fa;
-  border: 1px solid rgba(96, 165, 250, 0.4);
-  font-size: 10px;
+  background: rgba(37, 99, 235, 0.15);
+  color: var(--blue);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  font-size: 11px;
   font-weight: 700;
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: 8px;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
-.nudge-minimize-btn {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 0 4px;
-  margin-left: auto;
+.nudge-step-btn:hover {
+  background: rgba(37, 99, 235, 0.25);
 }
 
 .nudge-close-btn {
   background: transparent;
-  border: none;
-  color: #94a3b8;
-  font-size: 14px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
   cursor: pointer;
-  padding: 0 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nudge-close-btn:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.3);
 }
 
 .nudge-dpad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 40px);
+  grid-template-rows: repeat(2, 36px);
   gap: 4px;
   place-items: center;
 }
 
 .nudge-btn {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 15px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   touch-action: manipulation;
-  transition: background 0.1s ease, transform 0.1s ease;
+  transition: background 0.1s ease, transform 0.1s ease, border-color 0.1s ease;
 }
 
-[data-theme="light"] .nudge-btn {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.15);
-  color: #0f172a;
+.nudge-btn:hover {
+  background: var(--surface-3);
+  border-color: var(--blue);
 }
 
 .nudge-btn:active {
@@ -824,22 +846,24 @@ h3 {
 }
 
 @media (max-width: 640px) {
-  .workspace-nudge-pad {
-    bottom: 10px;
-    right: 10px;
-    width: 128px;
-    padding: 8px;
+  .tool-tab span:not(.tool-tab-icon) {
+    display: none;
+  }
+
+  .tool-tab {
+    padding: 8px 6px;
+    font-size: 12px;
   }
 
   .nudge-dpad {
-    grid-template-rows: repeat(2, 36px);
+    grid-template-rows: repeat(2, 32px);
     gap: 3px;
   }
 
   .nudge-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 14px;
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
   }
 
   .workspace-loupe {

@@ -16,23 +16,6 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
   container.classList.add('image-workspace');
   container.innerHTML = `
     <div class="workspace-media">
-      <div class="workspace-toolbar">
-        <button class="zoom-btn mode-pill-btn" data-action="toggle-hand" type="button" title="สลับโหมด: ปรับจุด / เลื่อนภาพ">
-          <span class="mode-label-point">📍 โหมดปรับจุด</span>
-          <span class="mode-label-hand" hidden>✋ โหมดเลื่อนภาพ</span>
-        </button>
-        <span class="toolbar-divider"></span>
-        <button class="zoom-btn" data-action="zoom-in" type="button" title="ขยายภาพ (+)">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-        </button>
-        <span class="zoom-badge">100%</span>
-        <button class="zoom-btn" data-action="zoom-out" type="button" title="ย่อภาพ (-)">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-        </button>
-        <button class="zoom-btn" data-action="zoom-reset" type="button" title="รีเซ็ตย่อ/ขยาย">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-        </button>
-      </div>
       <div class="workspace-stage">
         <img class="workspace-image" alt="" draggable="false">
         <svg class="workspace-overlay" role="img" aria-label="Calibration and measurement overlay"></svg>
@@ -41,25 +24,50 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
         <canvas class="loupe-canvas" width="160" height="160"></canvas>
         <div class="loupe-tag">C1</div>
       </div>
-      <div class="workspace-nudge-pad" hidden>
-        <div class="nudge-header">
-          <span class="nudge-title">ปรับจุด</span>
-          <button class="nudge-step-btn" type="button" title="สลับระยะขยับ (1px / 5px)">Step 1px</button>
-          <button class="nudge-minimize-btn" type="button" title="ย่อเป็นปุ่มเล็ก">—</button>
-          <button class="nudge-close-btn" type="button" title="ปิด">✕</button>
-        </div>
-        <div class="nudge-dpad">
-          <button class="nudge-btn nudge-up" data-dir="up" type="button" aria-label="ขยับขึ้น">▲</button>
-          <button class="nudge-btn nudge-left" data-dir="left" type="button" aria-label="ขยับซ้าย">◄</button>
-          <button class="nudge-btn nudge-right" data-dir="right" type="button" aria-label="ขยับขวา">►</button>
-          <button class="nudge-btn nudge-down" data-dir="down" type="button" aria-label="ขยับลง">▼</button>
-        </div>
-        <button class="nudge-chip-btn" type="button" title="แตะเพื่อเปิดแผงปรับจุด">
-          <span class="nudge-chip-title">🎯 C3</span>
-          <span class="nudge-chip-expand">▲</span>
-        </button>
-      </div>
       <div class="workspace-empty">เลือกภาพหรือเปิดกล้องเพื่อเริ่มต้น</div>
+    </div>
+    <div class="workspace-tool-tabs">
+      <div class="tool-tab-bar">
+        <button class="tool-tab active" data-tab="zoom" type="button">
+          <span class="tool-tab-icon">🔍</span><span>ซูม/เลื่อน</span>
+        </button>
+        <button class="tool-tab" data-tab="nudge" type="button">
+          <span class="tool-tab-icon">🎯</span><span>ปรับจุดละเอียด</span>
+        </button>
+        <button class="tool-tab-collapse" type="button" title="พับ/เปิด แถบเครื่องมือ" aria-label="พับ/เปิดแถบเครื่องมือ">▾</button>
+      </div>
+      <div class="tool-tab-panels">
+        <div class="tool-tab-panel" data-panel="zoom">
+          <button class="zoom-btn mode-pill-btn" data-action="toggle-hand" type="button" title="สลับโหมด: ปรับจุด / เลื่อนภาพ">
+            <span class="mode-label-point">📍 โหมดปรับจุด</span>
+            <span class="mode-label-hand" hidden>✋ โหมดเลื่อนภาพ</span>
+          </button>
+          <span class="toolbar-divider"></span>
+          <button class="zoom-btn" data-action="zoom-in" type="button" title="ขยายภาพ (+)">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <span class="zoom-badge">100%</span>
+          <button class="zoom-btn" data-action="zoom-out" type="button" title="ย่อภาพ (-)">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <button class="zoom-btn" data-action="zoom-reset" type="button" title="รีเซ็ตย่อ/ขยาย">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          </button>
+        </div>
+        <div class="tool-tab-panel" data-panel="nudge" hidden>
+          <div class="nudge-header">
+            <span class="nudge-title">ปรับจุด</span>
+            <button class="nudge-step-btn" type="button" title="สลับระยะขยับ (1px / 5px)">Step 1px</button>
+            <button class="nudge-close-btn" type="button" title="ยกเลิกการเลือกจุด">✕</button>
+          </div>
+          <div class="nudge-dpad">
+            <button class="nudge-btn nudge-up" data-dir="up" type="button" aria-label="ขยับขึ้น">▲</button>
+            <button class="nudge-btn nudge-left" data-dir="left" type="button" aria-label="ขยับซ้าย">◄</button>
+            <button class="nudge-btn nudge-right" data-dir="right" type="button" aria-label="ขยับขวา">►</button>
+            <button class="nudge-btn nudge-down" data-dir="down" type="button" aria-label="ขยับลง">▼</button>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
@@ -149,8 +157,6 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
 
   // Pan interaction (Right-click drag, Hand mode left-click drag, Middle click)
   media.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.workspace-toolbar')) return;
-
     const isRightClick = e.button === 2;
     const isMiddleClick = e.button === 1;
     const isPointTarget = !!e.target.closest('.calibration-point, .measurement-point');
@@ -225,42 +231,82 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
     }
   });
 
+  // Tab Bar: Collapsible tool panels below the image
+  const toolTabs = container.querySelector('.workspace-tool-tabs');
+  const tabBar = container.querySelector('.tool-tab-bar');
+  const tabPanels = container.querySelector('.tool-tab-panels');
+  const collapseBtn = container.querySelector('.tool-tab-collapse');
+  let activeTab = 'zoom';
+  let tabsCollapsed = false;
+
+  function updateTabBar() {
+    if (!toolTabs) return;
+    toolTabs.classList.toggle('is-collapsed', tabsCollapsed);
+    if (collapseBtn) collapseBtn.textContent = tabsCollapsed ? '▸' : '▾';
+
+    container.querySelectorAll('.tool-tab').forEach((tab) => {
+      tab.classList.toggle('active', tab.dataset.tab === activeTab && !tabsCollapsed);
+    });
+
+    container.querySelectorAll('.tool-tab-panel').forEach((panel) => {
+      panel.hidden = tabsCollapsed || panel.dataset.panel !== activeTab;
+    });
+  }
+
+  container.querySelectorAll('.tool-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+      if (activeTab === target && !tabsCollapsed) {
+        // Same tab clicked again — toggle collapse
+        tabsCollapsed = true;
+      } else {
+        activeTab = target;
+        tabsCollapsed = false;
+      }
+      updateTabBar();
+    });
+  });
+
+  collapseBtn?.addEventListener('click', () => {
+    tabsCollapsed = !tabsCollapsed;
+    updateTabBar();
+  });
+
   // Touch & Precision Nudge Pad state
   let activeSelectedPoint = null;
   let nudgeStep = 1;
-  let isNudgeMinimized = false;
 
-  const nudgePad = container.querySelector('.workspace-nudge-pad');
+  const nudgePanel = container.querySelector('[data-panel="nudge"]');
   const nudgeTitle = container.querySelector('.nudge-title');
   const nudgeStepBtn = container.querySelector('.nudge-step-btn');
-  const nudgeMinimizeBtn = container.querySelector('.nudge-minimize-btn');
   const nudgeCloseBtn = container.querySelector('.nudge-close-btn');
-  const nudgeChipBtn = container.querySelector('.nudge-chip-btn');
-  const nudgeChipTitle = container.querySelector('.nudge-chip-title');
+  const nudgeTab = container.querySelector('[data-tab="nudge"]');
 
   function updateNudgePadState() {
-    if (!nudgePad) return;
+    if (!nudgePanel) return;
     if (!activeSelectedPoint || draggedItem !== null) {
-      nudgePad.hidden = true;
+      // No point selected — update nudge tab badge but don't force switch
+      if (nudgeTab) nudgeTab.classList.add('is-empty');
+      if (nudgeTitle) nudgeTitle.textContent = 'ไม่มีจุดที่เลือก';
       return;
     }
-    nudgePad.hidden = false;
+    if (nudgeTab) nudgeTab.classList.remove('is-empty');
     const isCorner = activeSelectedPoint.type === 'corner';
     const idx = activeSelectedPoint.index;
     const prefix = isCorner ? 'C' : (lastRenderOptions?.pointPrefix || 'P');
     const pt = isCorner ? lastRenderOptions?.corners?.[idx] : lastRenderOptions?.dataPoints?.[idx];
 
-    nudgePad.classList.toggle('is-minimized', isNudgeMinimized);
-
     if (nudgeTitle) {
       nudgeTitle.textContent = pt ? `${prefix}${idx + 1} (${pt[0].toFixed(1)}, ${pt[1].toFixed(1)})` : `${prefix}${idx + 1}`;
-    }
-    if (nudgeChipTitle) {
-      nudgeChipTitle.textContent = `🎯 ${prefix}${idx + 1}`;
     }
     if (nudgeStepBtn) {
       nudgeStepBtn.textContent = `Step ${nudgeStep}px`;
     }
+
+    // Auto-switch to nudge tab when a point is selected
+    activeTab = 'nudge';
+    tabsCollapsed = false;
+    updateTabBar();
   }
 
   function moveSelectedPointByNudge(dx, dy) {
@@ -291,22 +337,6 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
     nudgeStepBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       nudgeStep = nudgeStep === 1 ? 5 : 1;
-      updateNudgePadState();
-    });
-  }
-
-  if (nudgeMinimizeBtn) {
-    nudgeMinimizeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      isNudgeMinimized = true;
-      updateNudgePadState();
-    });
-  }
-
-  if (nudgeChipBtn) {
-    nudgeChipBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      isNudgeMinimized = false;
       updateNudgePadState();
     });
   }
