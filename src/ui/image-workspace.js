@@ -45,6 +45,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
         <div class="nudge-header">
           <span class="nudge-title">ปรับจุด</span>
           <button class="nudge-step-btn" type="button" title="สลับระยะขยับ (1px / 5px)">Step 1px</button>
+          <button class="nudge-minimize-btn" type="button" title="ย่อเป็นปุ่มเล็ก">—</button>
           <button class="nudge-close-btn" type="button" title="ปิด">✕</button>
         </div>
         <div class="nudge-dpad">
@@ -53,6 +54,10 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
           <button class="nudge-btn nudge-right" data-dir="right" type="button" aria-label="ขยับขวา">►</button>
           <button class="nudge-btn nudge-down" data-dir="down" type="button" aria-label="ขยับลง">▼</button>
         </div>
+        <button class="nudge-chip-btn" type="button" title="แตะเพื่อเปิดแผงปรับจุด">
+          <span class="nudge-chip-title">🎯 C3</span>
+          <span class="nudge-chip-expand">▲</span>
+        </button>
       </div>
       <div class="workspace-empty">เลือกภาพหรือเปิดกล้องเพื่อเริ่มต้น</div>
     </div>
@@ -223,15 +228,19 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
   // Touch & Precision Nudge Pad state
   let activeSelectedPoint = null;
   let nudgeStep = 1;
+  let isNudgeMinimized = false;
 
   const nudgePad = container.querySelector('.workspace-nudge-pad');
   const nudgeTitle = container.querySelector('.nudge-title');
   const nudgeStepBtn = container.querySelector('.nudge-step-btn');
+  const nudgeMinimizeBtn = container.querySelector('.nudge-minimize-btn');
   const nudgeCloseBtn = container.querySelector('.nudge-close-btn');
+  const nudgeChipBtn = container.querySelector('.nudge-chip-btn');
+  const nudgeChipTitle = container.querySelector('.nudge-chip-title');
 
   function updateNudgePadState() {
     if (!nudgePad) return;
-    if (!activeSelectedPoint) {
+    if (!activeSelectedPoint || draggedItem !== null) {
       nudgePad.hidden = true;
       return;
     }
@@ -240,8 +249,14 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
     const idx = activeSelectedPoint.index;
     const prefix = isCorner ? 'C' : (lastRenderOptions?.pointPrefix || 'P');
     const pt = isCorner ? lastRenderOptions?.corners?.[idx] : lastRenderOptions?.dataPoints?.[idx];
+
+    nudgePad.classList.toggle('is-minimized', isNudgeMinimized);
+
     if (nudgeTitle) {
       nudgeTitle.textContent = pt ? `${prefix}${idx + 1} (${pt[0].toFixed(1)}, ${pt[1].toFixed(1)})` : `${prefix}${idx + 1}`;
+    }
+    if (nudgeChipTitle) {
+      nudgeChipTitle.textContent = `🎯 ${prefix}${idx + 1}`;
     }
     if (nudgeStepBtn) {
       nudgeStepBtn.textContent = `Step ${nudgeStep}px`;
@@ -280,6 +295,22 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
     });
   }
 
+  if (nudgeMinimizeBtn) {
+    nudgeMinimizeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isNudgeMinimized = true;
+      updateNudgePadState();
+    });
+  }
+
+  if (nudgeChipBtn) {
+    nudgeChipBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isNudgeMinimized = false;
+      updateNudgePadState();
+    });
+  }
+
   if (nudgeCloseBtn) {
     nudgeCloseBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -311,8 +342,8 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
     loupe.hidden = false;
     const mediaRect = media.getBoundingClientRect();
 
-    const loupeW = isTouch ? 160 : 140;
-    const loupeH = isTouch ? 160 : 140;
+    const loupeW = isTouch ? 140 : 140;
+    const loupeH = isTouch ? 140 : 140;
     if (loupeCanvas.width !== loupeW || loupeCanvas.height !== loupeH) {
       loupeCanvas.width = loupeW;
       loupeCanvas.height = loupeH;
@@ -321,8 +352,9 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
     let left = clientX - mediaRect.left - loupeW / 2;
     let top = clientY - mediaRect.top - loupeH - (isTouch ? 65 : 24);
 
-    if (top < 10) top = clientY - mediaRect.top + (isTouch ? 55 : 24);
-    left = Math.max(10, Math.min(mediaRect.width - loupeW - 10, left));
+    if (top < 8) top = clientY - mediaRect.top + (isTouch ? 55 : 24);
+    left = Math.max(8, Math.min(mediaRect.width - loupeW - 8, left));
+    top = Math.max(8, Math.min(mediaRect.height - loupeH - 8, top));
 
     loupe.style.transform = `translate(${left}px, ${top}px)`;
     if (loupeTag) loupeTag.textContent = labelText;
@@ -393,6 +425,19 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
     ];
   }
 
+  // Touch scroll prevention when touching/dragging point elements on mobile touch devices
+  overlay.addEventListener('touchstart', (e) => {
+    if (e.target.closest?.('.calibration-point, .measurement-point')) {
+      if (e.touches.length === 1) e.preventDefault();
+    }
+  }, { passive: false });
+
+  overlay.addEventListener('touchmove', (e) => {
+    if (draggedItem) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
   overlay.addEventListener('pointerdown', (event) => {
     const cornerTarget = event.target.closest?.('.calibration-point');
     const pointTarget = event.target.closest?.('.measurement-point');
@@ -410,6 +455,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
 
       overlay.setPointerCapture?.(event.pointerId);
       overlay.classList.add('is-dragging-point');
+      media.classList.add('is-dragging-point');
       updateLoupe(dragStartPt, `C${idx + 1}`, event.clientX, event.clientY, isTouch);
       return;
     }
@@ -426,6 +472,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
 
       overlay.setPointerCapture?.(event.pointerId);
       overlay.classList.add('is-dragging-point');
+      media.classList.add('is-dragging-point');
       const prefix = lastRenderOptions?.pointPrefix || 'P';
       updateLoupe(dragStartPt, `${prefix}${idx + 1}`, event.clientX, event.clientY, isTouch);
       return;
@@ -460,6 +507,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
 
   overlay.addEventListener('pointerup', (event) => {
     hideLoupe();
+    media.classList.remove('is-dragging-point');
     if (draggedItem && dragStartPt && dragStartEventPt) {
       event.preventDefault();
       const currentEventPt = eventToImagePoint(event);
@@ -478,6 +526,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
 
       overlay.releasePointerCapture?.(event.pointerId);
       overlay.classList.remove('is-dragging-point');
+      updateNudgePadState();
 
       if (item.type === 'corner' && onMoveCorner) {
         onMoveCorner(item.index, pt, { committed: true });
@@ -492,6 +541,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
 
   overlay.addEventListener('pointercancel', (event) => {
     hideLoupe();
+    media.classList.remove('is-dragging-point');
     if (draggedItem && dragStartPt && dragStartEventPt) {
       const currentEventPt = eventToImagePoint(event);
       const dx = currentEventPt[0] - dragStartEventPt[0];
@@ -514,6 +564,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
       }
     }
     overlay.classList.remove('is-dragging-point');
+    updateNudgePadState();
   });
 
   overlay.addEventListener('keydown', (event) => {
@@ -715,7 +766,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
       const title = svgNode('title');
       title.textContent = `C${index + 1}: drag to adjust`;
       group.appendChild(title);
-      const hitRadius = Math.max(pointRadius * 3.2, 22);
+      const hitRadius = Math.max(pointRadius * 3.5, 26 * unitsPerCssPixel);
       group.appendChild(svgNode('circle', {
         cx: point[0], cy: point[1], r: hitRadius, class: 'point-hit-target'
       }));
@@ -810,7 +861,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
       const title = svgNode('title');
       title.textContent = `${pointPrefix}${index + 1}: drag to adjust`;
       group.appendChild(title);
-      const hitRadius = Math.max(pointRadius * 3.2, 22);
+      const hitRadius = Math.max(pointRadius * 3.5, 26 * unitsPerCssPixel);
       group.appendChild(svgNode('circle', {
         cx: point[0], cy: point[1], r: hitRadius, class: 'point-hit-target'
       }));

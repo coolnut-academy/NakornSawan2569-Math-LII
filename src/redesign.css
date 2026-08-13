@@ -612,12 +612,61 @@ h3 {
   flex-direction: column;
   gap: 8px;
   width: 144px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 [data-theme="light"] .workspace-nudge-pad {
   background: rgba(255, 255, 255, 0.92);
   border-color: rgba(0, 0, 0, 0.12);
   color: #0f172a;
+}
+
+.workspace-nudge-pad.is-minimized {
+  width: auto;
+  padding: 0;
+  border-radius: 20px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.workspace-nudge-pad.is-minimized .nudge-header,
+.workspace-nudge-pad.is-minimized .nudge-dpad {
+  display: none !important;
+}
+
+.nudge-chip-btn {
+  display: none;
+}
+
+.workspace-nudge-pad.is-minimized .nudge-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 18px;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+[data-theme="light"] .workspace-nudge-pad.is-minimized .nudge-chip-btn {
+  background: rgba(255, 255, 255, 0.94);
+  color: #0f172a;
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.nudge-chip-expand {
+  font-size: 10px;
+  color: var(--blue);
 }
 
 .nudge-header {
@@ -645,6 +694,17 @@ h3 {
   padding: 2px 6px;
   border-radius: 8px;
   cursor: pointer;
+}
+
+.nudge-minimize-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: auto;
 }
 
 .nudge-close-btn {
@@ -747,8 +807,45 @@ h3 {
 }
 
 .workspace-overlay.is-dragging-point,
-.workspace-overlay.is-dragging-point .measurement-point {
+.workspace-overlay.is-dragging-point .measurement-point,
+.workspace-media.is-dragging-point {
   cursor: grabbing;
+  touch-action: none !important;
+  user-select: none !important;
+}
+
+.overlay-label,
+.calibration-outline,
+.shadow-line,
+.measurement-line,
+.dimension-line,
+.dimension-label {
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .workspace-nudge-pad {
+    bottom: 10px;
+    right: 10px;
+    width: 128px;
+    padding: 8px;
+  }
+
+  .nudge-dpad {
+    grid-template-rows: repeat(2, 36px);
+    gap: 3px;
+  }
+
+  .nudge-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .workspace-loupe {
+    width: 130px;
+    height: 130px;
+  }
 }
 
 .workspace-empty {
