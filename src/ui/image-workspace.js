@@ -406,11 +406,15 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
     // Crop region with 2.5x zoom multiplier
     const cropW = screenPixelsPerUnitX > 0 ? (loupeW / 2.5) / screenPixelsPerUnitX * natScaleX : 50;
     const cropH = screenPixelsPerUnitY > 0 ? (loupeH / 2.5) / screenPixelsPerUnitY * natScaleY : 50;
-    const cropX = imgX - cropW / 2;
-    const cropY = imgY - cropH / 2;
+
+    // Safe crop bounds clamping to prevent WebKit IndexSizeError on right/bottom edge points (e.g. C2, C3)
+    const safeCropW = Math.min(image.naturalWidth, Math.max(1, cropW));
+    const safeCropH = Math.min(image.naturalHeight, Math.max(1, cropH));
+    const safeCropX = Math.max(0, Math.min(image.naturalWidth - safeCropW, imgX - safeCropW / 2));
+    const safeCropY = Math.max(0, Math.min(image.naturalHeight - safeCropH, imgY - safeCropH / 2));
 
     try {
-      ctx.drawImage(image, cropX, cropY, cropW, cropH, 0, 0, loupeW, loupeH);
+      ctx.drawImage(image, safeCropX, safeCropY, safeCropW, safeCropH, 0, 0, loupeW, loupeH);
     } catch {}
 
     // Precision Crosshair overlay
@@ -472,7 +476,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
     const cornerTarget = event.target.closest?.('.calibration-point');
     const pointTarget = event.target.closest?.('.measurement-point');
 
-    const isTouch = event.pointerType === 'touch';
+    const isTouch = event.pointerType === 'touch' || event.pointerType === 'pen';
     if (cornerTarget && onMoveCorner && cornerTarget.dataset.cornerIndex !== undefined) {
       event.preventDefault();
       const idx = Number(cornerTarget.dataset.cornerIndex);
@@ -521,7 +525,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
       Math.max(0, Math.min(height, dragStartPt[1] + dy))
     ];
 
-    const isTouch = event.pointerType === 'touch';
+    const isTouch = event.pointerType === 'touch' || event.pointerType === 'pen';
     const label = draggedItem.type === 'corner'
       ? `C${draggedItem.index + 1}`
       : `${lastRenderOptions?.pointPrefix || 'P'}${draggedItem.index + 1}`;
@@ -694,16 +698,76 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
       pointPrefix = 'Q',
       shadowPrefix = 'P'
     } = options;
-    overlay.innerHTML = '';
-    overlay.toggleAttribute('hidden', !showOverlay);
+
     interactive = interactiveMode;
     pointsDraggable = draggablePoints;
     overlay.classList.toggle('is-interactive', interactiveMode);
     overlay.classList.toggle('has-draggable-points', draggablePoints);
+    overlay.toggleAttribute('hidden', !showOverlay);
     if (!showOverlay || !width || !height) return;
 
     const visibleCorners = corners.slice(0, cornerCount);
     const visiblePoints = dataPoints.slice(0, pointCount);
+
+    // In-place SVG element updates during active drags to preserve DOM nodes and Pointer Capture in WebKit
+    if (draggedItem !== null && overlay.childElementCount > 0) {
+      const calPolyline = overlay.querySelector('.calibration-outline');
+      if (calPolyline && visibleCorners.length > 1) {
+        calPolyline.setAttribute('points', pointString(visibleCorners));
+      }
+
+      visibleCorners.forEach((point, index) => {
+        const group = overlay.querySelector(`[data-corner-index="${index}"]`);
+        if (group) {
+          group.querySelectorAll('circle').forEach((c) => {
+            c.setAttribute('cx', point[0]);
+            c.setAttribute('cy', point[1]);
+          });
+          const alignRight = index === 1 || index === 2;
+          const isBottom = index > 1;
+          const labelGap = 12 * (width / (media.getBoundingClientRect().width || width));
+          const labelX = point[0] + (alignRight ? -labelGap : labelGap);
+          const labelY = point[1] + (isBottom ? labelGap * 1.45 : labelGap * 0.35);
+          group.querySelectorAll('text').forEach((txt, tIdx) => {
+            txt.setAttribute('x', labelX);
+            txt.setAttribute('y', tIdx === 0 ? labelY : labelY + (13 * (width / (media.getBoundingClientRect().width || width))) * 1.15);
+          });
+        }
+      });
+
+      const measPolyline = overlay.querySelector('.measurement-line');
+      if (measPolyline && visiblePoints.length > 1) {
+        measPolyline.setAttribute('points', pointString(visiblePoints));
+      }
+
+      visiblePoints.forEach((point, index) => {
+        const group = overlay.querySelector(`[data-point-index="${index}"]`);
+        if (group) {
+          group.querySelectorAll('circle').forEach((c) => {
+            c.setAttribute('cx', point[0]);
+            c.setAttribute('cy', point[1]);
+          });
+          const labelGap = 12 * (width / (media.getBoundingClientRect().width || width));
+          const placements = [
+            { dx: -labelGap, dy: -labelGap * 0.7 },
+            { dx: 0, dy: -labelGap * 1.35 },
+            { dx: 0, dy: labelGap * 1.65 },
+            { dx: 0, dy: labelGap * 1.65 },
+            { dx: 0, dy: -labelGap * 1.35 },
+            { dx: labelGap, dy: -labelGap * 0.7 }
+          ];
+          const pl = placements[index] || { dx: 0, dy: 0 };
+          const txt = group.querySelector('text');
+          if (txt) {
+            txt.setAttribute('x', point[0] + pl.dx);
+            txt.setAttribute('y', point[1] + pl.dy);
+          }
+        }
+      });
+      return;
+    }
+
+    overlay.innerHTML = '';
     const displayedWidth = media.getBoundingClientRect().width || width;
     const unitsPerCssPixel = width / displayedWidth;
     const pointRadius = 8 * unitsPerCssPixel;

@@ -818,6 +818,7 @@ h3 {
 
 .workspace-overlay.is-interactive {
   cursor: crosshair;
+  touch-action: none;
 }
 
 .workspace-overlay.has-draggable-points {
@@ -943,6 +944,7 @@ h3 {
   vector-effect: non-scaling-stroke;
   font-family: var(--mono);
   font-weight: 600;
+  pointer-events: none;
 }
 
 .calibration-label {

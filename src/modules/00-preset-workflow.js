@@ -313,7 +313,7 @@ export function initPresetWorkflow({ onGoLive } = {}) {
         scaleWidth: 6,
         scaleHeight: 6,
         interactiveMode: true,
-        draggablePoints: currentPhase >= 2,
+        draggablePoints: currentPhase >= 2 || topCorners.length === 4,
         pointPrefix: 'P'
       });
     } else {
@@ -329,7 +329,7 @@ export function initPresetWorkflow({ onGoLive } = {}) {
         scaleWidth: 6,
         scaleHeight: 6,
         interactiveMode: true,
-        draggablePoints: currentPhase >= 5,
+        draggablePoints: currentPhase >= 5 || tiltedCorners.length === 4,
         pointPrefix: 'Q',
         shadowPrefix: 'P'
       });

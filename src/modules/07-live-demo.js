@@ -382,7 +382,7 @@ function render() {
       scaleWidth: targetWidth,
       scaleHeight: targetHeight,
       interactiveMode: true,
-      draggablePoints: currentPhase >= 2,
+      draggablePoints: currentPhase >= 2 || topCorners.length === 4,
       pointPrefix: 'P'
     });
   } else {
@@ -396,7 +396,7 @@ function render() {
       scaleWidth: targetWidth,
       scaleHeight: targetHeight,
       interactiveMode: true,
-      draggablePoints: currentPhase >= 5,
+      draggablePoints: currentPhase >= 5 || tiltedCorners.length === 4,
       pointPrefix: 'Q',
       shadowPrefix: 'P'
     });
