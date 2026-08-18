@@ -3,10 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <link rel="icon" href="data:," />
-  <meta name="color-scheme" content="light dark" />
-  <meta name="description" content="LII Dental Studio — ทดลองสอบเทียบและวัดค่า LII (Polyline Path Length) จากภาพถ่ายฟัน ผ่านการ calibrate ด้วย Homography" />
-  <title>LII Dental Studio | Photo Measurement</title>
+  <link rel="icon" type="image/png" href="./Hs_logo_mid.png" />
+  <link rel="shortcut icon" href="./Hs_logo_mid.png" />
+  <link rel="apple-touch-icon" href="./Hs_logo_mid.png" />
+  <meta name="author" content="ชญานุตม์ แจ่มจันทร์, วรวลัญช์ จันทร์วิไลลักษณ์, วรัญญา ศิริรัตน์" />
+  <meta name="description" content="LII Dental Studio — แบบจำลองโฮโมกราฟีและการวิเคราะห์ขอบเขตความคลาดเคลื่อน (Polyline Path Length) | โรงเรียนห้องสอนศึกษา ในพระอุปถัมภ์ฯ" />
+  <title>LII Dental Studio | โรงเรียนห้องสอนศึกษา ในพระอุปถัมภ์ฯ</title>
   
   <!-- KaTeX for Vector Mathematical Typography -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
@@ -19,11 +21,14 @@
 <body>
   <header class="site-header">
     <div class="container nav">
-      <a class="brand" href="#top" aria-label="LII Dental Studio home">
+      <a class="brand" href="#top" aria-label="โรงเรียนห้องสอนศึกษา ในพระอุปถัมภ์ฯ — LII Dental Studio">
         <span class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M3 16.5 8 11l4 3.5L20.5 6" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="3" cy="16.5" r="1.4" fill="white"/><circle cx="8" cy="11" r="1.4" fill="white"/><circle cx="12" cy="14.5" r="1.4" fill="white"/><circle cx="20.5" cy="6" r="1.4" fill="white"/></svg>
+          <img src="./Hs_logo_mid.png" alt="ตราสัญลักษณ์โรงเรียนห้องสอนศึกษา ในพระอุปถัมภ์ฯ" class="brand-logo" width="38" height="60" />
         </span>
-        <span class="brand-copy"><strong>LII Dental Studio</strong><small>Photo calibration & measurement</small></span>
+        <span class="brand-copy">
+          <strong>LII Dental Studio</strong>
+          <small>โรงเรียนห้องสอนศึกษา ในพระอุปถัมภ์ฯ</small>
+        </span>
       </a>
       <div class="header-actions">
         <div class="header-mode-switch" aria-label="เลือกโหมดการใช้งาน">
@@ -34,10 +39,6 @@
             <i data-lucide="camera"></i><span>Live Studio</span>
           </button>
         </div>
-        <button class="theme-toggle-btn" data-theme-toggle aria-label="Toggle dark mode">
-          <svg class="theme-icon-sun" style="display:none;width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-          <svg class="theme-icon-moon" style="display:block;width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </button>
       </div>
     </div>
   </header>
@@ -110,15 +111,21 @@
 
           <div class="target-download-band">
             <div>
-              <strong>Calibration Target 6 × 6 cm</strong>
-              <span>ดาวน์โหลดแผ่นเป้าหมายเวกเตอร์สำหรับพิมพ์และทดลองบนระนาบ</span>
+              <strong>แผ่นตารางกริดสำหรับวางวัตถุ (Square Grid A4 PDF)</strong>
+              <span>ดาวน์โหลดเอกสาร PDF ตารางกริดมาตราส่วนแม่นยำ (A4) สำหรับพิมพ์เป็นพื้นหลังวางวัตถุ · ขนาดช่อง 1 mm / 2 mm / 5 mm</span>
             </div>
             <div class="target-download-actions">
-              <button class="btn btn-secondary btn-sm" id="btnDownloadTargetSVG" type="button"><i data-lucide="download"></i><span>SVG</span></button>
-              <button class="btn btn-secondary btn-sm" id="btnDownloadTargetPNG" type="button"><i data-lucide="download"></i><span>PNG</span></button>
+              <a class="btn btn-secondary btn-sm" href="./square-grid-a4-1mm.pdf" download="square-grid-a4-1mm.pdf" target="_blank" rel="noopener">
+                <i data-lucide="download"></i><span>กริด 1 mm (A4)</span>
+              </a>
+              <a class="btn btn-secondary btn-sm" href="./square-grid-a4-2mm.pdf" download="square-grid-a4-2mm.pdf" target="_blank" rel="noopener">
+                <i data-lucide="download"></i><span>กริด 2 mm (A4)</span>
+              </a>
+              <a class="btn btn-secondary btn-sm" href="./square-grid-a4-5mm.pdf" download="square-grid-a4-5mm.pdf" target="_blank" rel="noopener">
+                <i data-lucide="download"></i><span>กริด 5 mm (A4)</span>
+              </a>
             </div>
           </div>
-          <div id="targetSVGContainer" hidden></div>
         </div>
       </section>
 
@@ -432,6 +439,24 @@
               </div>
             </aside>
           </div>
+
+          <div class="target-download-band" style="margin-top: 24px;">
+            <div>
+              <strong>แผ่นตารางกริดสำหรับวางวัตถุ (Square Grid A4 PDF)</strong>
+              <span>ดาวน์โหลดเอกสาร PDF ตารางกริดมาตราส่วนแม่นยำ (A4) สำหรับพิมพ์เป็นพื้นหลังวางวัตถุ · ขนาดช่อง 1 mm / 2 mm / 5 mm</span>
+            </div>
+            <div class="target-download-actions">
+              <a class="btn btn-secondary btn-sm" href="./square-grid-a4-1mm.pdf" download="square-grid-a4-1mm.pdf" target="_blank" rel="noopener">
+                <i data-lucide="download"></i><span>กริด 1 mm (A4)</span>
+              </a>
+              <a class="btn btn-secondary btn-sm" href="./square-grid-a4-2mm.pdf" download="square-grid-a4-2mm.pdf" target="_blank" rel="noopener">
+                <i data-lucide="download"></i><span>กริด 2 mm (A4)</span>
+              </a>
+              <a class="btn btn-secondary btn-sm" href="./square-grid-a4-5mm.pdf" download="square-grid-a4-5mm.pdf" target="_blank" rel="noopener">
+                <i data-lucide="download"></i><span>กริด 5 mm (A4)</span>
+              </a>
+            </div>
+          </div>
         </div>
       </section>
       <div id="liveAnalysisModules" class="analysis-modules" data-analysis-source="live"></div>
@@ -439,12 +464,53 @@
 
   </main>
 
-  <footer style="padding:42px 0 60px;border-top:1px solid var(--line);background:var(--surface);margin-top:60px">
-    <div class="container" style="display:flex;justify-content:space-between;gap:30px">
-      <div>
-        <strong>LII Dental Studio</strong>
-        <p class="muted small" style="max-width:650px;margin-top:8px">Interactive mathematical proof of concept for a homography-based model and error-bound analysis. ค่า LII ในเครื่องมือนี้คือ Polyline Path Length (ผลรวมระยะ 5 ช่วง) ไม่ใช่ Little’s Irregularity Index แบบ clinical displacement</p>
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-school-section">
+        <img src="./Hs_logo_mid.png" alt="ตราสัญลักษณ์โรงเรียนห้องสอนศึกษา ในพระอุปถัมภ์ฯ" class="footer-school-logo" width="56" height="89" />
+        <div class="footer-school-info">
+          <div class="footer-school-title">โรงเรียนห้องสอนศึกษา ในพระอุปถัมภ์ฯ</div>
+          <div class="footer-school-sub">สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาแม่ฮ่องสอน</div>
+          <p class="footer-project-title">
+            <strong>โครงงานคณิตศาสตร์:</strong> แบบจำลองโฮโมกราฟีและการวิเคราะห์ขอบเขตความคลาดเคลื่อนของดัชนีความซ้อนเกของฟันจากภาพจำลอง (LII Lens Lab)
+          </p>
+          <div class="footer-badge-list" style="margin-top: 10px;">
+            <span class="badge badge-blue">การแข่งขันคณิตศาสตร์วิชาการ ครั้งที่ 11 ระดับชาติ</span>
+            <span class="badge badge-blue">โครงงานคณิตศาสตร์ที่บูรณาการความรู้ไปประยุกต์ใช้</span>
+          </div>
+        </div>
       </div>
+
+      <div class="footer-team-section">
+        <div class="footer-team-card">
+          <div class="footer-team-header">
+            <span class="footer-team-icon">🎓</span>
+            <span class="footer-team-heading">คณะผู้จัดทำ</span>
+          </div>
+          <ul class="footer-team-list">
+            <li><strong>นางสาวชญานุตม์ แจ่มจันทร์</strong> <span class="footer-member-role">นักเรียนผู้จัดทำ</span></li>
+            <li><strong>นางสาววรวลัญช์ จันทร์วิไลลักษณ์</strong> <span class="footer-member-role">นักเรียนผู้จัดทำ</span></li>
+            <li><strong>นางสาววรัญญา ศิริรัตน์</strong> <span class="footer-member-role">นักเรียนผู้จัดทำ</span></li>
+          </ul>
+        </div>
+
+        <div class="footer-team-card">
+          <div class="footer-team-header">
+            <span class="footer-team-icon">👨‍🏫</span>
+            <span class="footer-team-heading">ครูที่ปรึกษาโครงงาน</span>
+          </div>
+          <ul class="footer-team-list">
+            <li><strong>นางสาวพรไพลิน ตาไฝ</strong> <span class="footer-member-role">ครูที่ปรึกษา</span></li>
+            <li><strong>นายสาธิต ศิริวัชน์</strong> <span class="footer-member-role">ครูที่ปรึกษา</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container footer-bottom-bar">
+      <p class="muted small footer-disclaimer">
+        <strong>Mathematical Proof of Concept:</strong> การทดลองและแบบจำลองนี้ใช้ Polyline Path Length (\(LII = \sum_{i=1}^5 d(P_i, P_{i+1})\)) บนระนาบ 2D สำหรับการพิสูจน์ขอบเขตทฤษฎีบท \(|\hat{L} - L_0| \le 10\varepsilon\) ไม่ใช่เครื่องมือวินิจฉัยทางการแพทย์
+      </p>
     </div>
   </footer>
 

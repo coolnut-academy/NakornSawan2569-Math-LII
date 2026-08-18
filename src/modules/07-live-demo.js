@@ -185,14 +185,13 @@ function handleWorkspacePoint(point) {
         topCorners.pop();
         setPointError('ลำดับมุมไม่ถูกต้อง กรุณาเลือก C1-C4 ตามเข็มนาฬิกา');
       } else {
-        currentPhase = 2;
         setPointError('');
       }
     }
   } else if (currentPhase === 2 && pPixelPoints.length < 6) {
     pPixelPoints.push(point);
     if (pPixelPoints.length === 6) {
-      currentPhase = 3;
+      setPointError('');
     }
   } else if (currentPhase === 4 && tiltedCorners.length < 4) {
     tiltedCorners.push(point);
@@ -202,8 +201,7 @@ function handleWorkspacePoint(point) {
         tiltedCorners.pop();
         setPointError('ลำดับมุมไม่ถูกต้อง กรุณาเลือก C1-C4 ตามเข็มนาฬิกา');
       } else {
-        currentPhase = 5;
-        if (!qPixelPoints.length) qPixelPoints = [...pPixelPoints];
+        if (!qPixelPoints.length && pPixelPoints.length === 6) qPixelPoints = [...pPixelPoints];
         setPointError('');
       }
     }
@@ -221,7 +219,11 @@ function handleWorkspacePointMove(index, point, { committed }) {
     if (qPixelPoints[index]) qPixelPoints[index] = point;
   }
   publishedToModules = false;
-  render();
+  if (committed) {
+    render();
+  } else {
+    renderWorkspaceOnly();
+  }
 }
 
 function handleWorkspaceCornerMove(index, point, { committed }) {
@@ -231,7 +233,11 @@ function handleWorkspaceCornerMove(index, point, { committed }) {
     if (tiltedCorners[index]) tiltedCorners[index] = point;
   }
   publishedToModules = false;
-  render();
+  if (committed) {
+    render();
+  } else {
+    renderWorkspaceOnly();
+  }
 }
 
 function computePWorldPoints() {
@@ -371,7 +377,7 @@ function setPointError(message) {
   error.hidden = !message;
 }
 
-function render() {
+function renderWorkspaceOnly() {
   if (currentPhase <= 3) {
     workspace?.render({
       corners: topCorners,
@@ -401,6 +407,10 @@ function render() {
       shadowPrefix: 'P'
     });
   }
+}
+
+function render() {
+  renderWorkspaceOnly();
 
   // Real-time Calc Panel Update
   const pWorld = pWorldPoints.length === 6 ? pWorldPoints : computePWorldPoints();
@@ -429,6 +439,17 @@ function render() {
 
   const analyze = document.getElementById('analyzeDemoBtn');
   if (analyze) {
+    const actionLabels = {
+      1: 'ขั้นตอนถัดไป: กำหนดจุด P1-P6',
+      2: 'ขั้นตอนถัดไป: บันทึกจุดอ้างอิง P',
+      3: 'ขั้นตอนถัดไป: ภาพมุมเอียง (Tilted)',
+      4: 'ขั้นตอนถัดไป: กำหนดจุด Q1-Q6',
+      5: 'ประมวลผลไปยัง Module 1–5',
+      6: publishedToModules ? 'ส่งข้อมูลเรียบร้อย' : 'คำนวณเรียบร้อย'
+    };
+    const span = analyze.querySelector('span');
+    if (span) span.textContent = actionLabels[currentPhase] || 'ขั้นตอนถัดไป';
+
     if (currentPhase === 1) analyze.disabled = topCorners.length !== 4;
     else if (currentPhase === 2) analyze.disabled = pPixelPoints.length !== 6;
     else if (currentPhase === 3) analyze.disabled = false;

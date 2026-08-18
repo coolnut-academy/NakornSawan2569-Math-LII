@@ -7,7 +7,6 @@ import { initErrorBound } from './modules/03-error-bound.js';
 import { initMonteCarlo } from './modules/04-monte-carlo.js';
 import { initReproduce18 } from './modules/05-reproduce-18.js';
 import { initLiveDemo, stopLiveCamera } from './modules/07-live-demo.js';
-import { generateTargetSVG, downloadTargetSVG, downloadTargetPNG } from './core/target-generator.js';
 import { presetMeasurementStore, liveMeasurementStore } from './core/measurement-store.js';
 import { mountAnalysisInstances } from './ui/analysis-context.js';
 
@@ -22,6 +21,7 @@ function initAnalysisModules(root, store) {
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize Theme System
   initTheme();
+  refreshIcons();
 
   const presetAnalysisRoot = document.getElementById('presetAnalysisModules');
   const liveAnalysisRoot = document.getElementById('liveAnalysisModules');
@@ -29,19 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initAnalysisModules(presetAnalysisRoot, presetMeasurementStore);
   initAnalysisModules(liveAnalysisRoot, liveMeasurementStore);
   initLiveDemo();
-
-  // Keep target generation available for the download actions.
-  const targetBox = document.getElementById('targetSVGContainer');
-  if (targetBox) {
-    targetBox.appendChild(generateTargetSVG(320, 320));
-  }
-
-  // Bind Target Downloader Buttons
-  const btnSvg = document.getElementById('btnDownloadTargetSVG');
-  const btnPng = document.getElementById('btnDownloadTargetPNG');
-
-  if (btnSvg) btnSvg.addEventListener('click', downloadTargetSVG);
-  if (btnPng) btnPng.addEventListener('click', downloadTargetPNG);
 
   // Bind Mode Switcher Tabs
   const tabPreset = document.getElementById('tabModePreset');

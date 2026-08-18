@@ -150,7 +150,8 @@ export function initPresetWorkflow({ onGoLive } = {}) {
     } else {
       if (qPixelPoints[index]) qPixelPoints[index] = point;
     }
-    render();
+    if (committed) render();
+    else renderWorkspaceOnly();
   }
 
   function handleWorkspaceCornerMove(index, point, { committed }) {
@@ -160,7 +161,8 @@ export function initPresetWorkflow({ onGoLive } = {}) {
       if (tiltedCorners[index]) tiltedCorners[index] = point;
     }
     published = false;
-    render();
+    if (committed) render();
+    else renderWorkspaceOnly();
   }
 
   // Calculate World Points for P (Top-Down)
@@ -269,38 +271,7 @@ export function initPresetWorkflow({ onGoLive } = {}) {
     }));
   }
 
-  function render() {
-    // Stepper UI update
-    if (stepBar) {
-      stepBar.innerHTML = PRESET_PHASES.map(p => `
-        <div class="phase-step-item ${p.id === currentPhase ? 'active' : ''} ${p.id < currentPhase ? 'completed' : ''}" data-phase="${p.id}">
-          <span class="step-num">${p.id < currentPhase ? '✓' : p.id}</span>
-          <span>${p.name}</span>
-        </div>
-      `).join('');
-
-      stepBar.querySelectorAll('.phase-step-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const ph = Number(item.dataset.phase);
-          if (ph < currentPhase) {
-            if (ph <= 3 && currentPhase >= 4) {
-              workspace.setImage(PRESET_SESSION.imageSrc, PRESET_SESSION.imageAlt).then(() => {
-                tiltedImageLoaded = false;
-                setPhase(ph);
-              });
-            } else {
-              setPhase(ph);
-            }
-          }
-        });
-      });
-    }
-
-    // Status label
-    if (statusElem) statusElem.textContent = PRESET_PHASES[currentPhase - 1]?.name || '';
-    if (counterElem) counterElem.textContent = `ขั้นตอน ${currentPhase} / 6`;
-
-    // Render Workspace SVG Overlay
+  function renderWorkspaceOnly() {
     if (currentPhase <= 3) {
       // Top-Down rendering
       workspace.render({
@@ -334,6 +305,40 @@ export function initPresetWorkflow({ onGoLive } = {}) {
         shadowPrefix: 'P'
       });
     }
+  }
+
+  function render() {
+    // Stepper UI update
+    if (stepBar) {
+      stepBar.innerHTML = PRESET_PHASES.map(p => `
+        <div class="phase-step-item ${p.id === currentPhase ? 'active' : ''} ${p.id < currentPhase ? 'completed' : ''}" data-phase="${p.id}">
+          <span class="step-num">${p.id < currentPhase ? '✓' : p.id}</span>
+          <span>${p.name}</span>
+        </div>
+      `).join('');
+
+      stepBar.querySelectorAll('.phase-step-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const ph = Number(item.dataset.phase);
+          if (ph < currentPhase) {
+            if (ph <= 3 && currentPhase >= 4) {
+              workspace.setImage(PRESET_SESSION.imageSrc, PRESET_SESSION.imageAlt).then(() => {
+                tiltedImageLoaded = false;
+                setPhase(ph);
+              });
+            } else {
+              setPhase(ph);
+            }
+          }
+        });
+      });
+    }
+
+    // Status label
+    if (statusElem) statusElem.textContent = PRESET_PHASES[currentPhase - 1]?.name || '';
+    if (counterElem) counterElem.textContent = `ขั้นตอน ${currentPhase} / 6`;
+
+    renderWorkspaceOnly();
 
     // Toggle Upload Area display
     if (uploadArea) {

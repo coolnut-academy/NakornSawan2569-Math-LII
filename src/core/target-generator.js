@@ -172,13 +172,43 @@ export function generateTargetSVG(width = 600, height = 600) {
   // Title Text on Sheet
   const title = document.createElementNS(svgNS, 'text');
   title.setAttribute('x', '300');
-  title.setAttribute('y', '36');
+  title.setAttribute('y', '34');
   title.setAttribute('text-anchor', 'middle');
-  title.setAttribute('font-size', '14');
+  title.setAttribute('font-size', '13');
   title.setAttribute('font-weight', 'bold');
   title.setAttribute('fill', '#0f172a');
   title.textContent = 'LII POLYLINE CALIBRATION TARGET (6cm × 6cm GRID)';
   svg.appendChild(title);
+
+  // School name subtitle
+  const schoolSub = document.createElementNS(svgNS, 'text');
+  schoolSub.setAttribute('x', '300');
+  schoolSub.setAttribute('y', '48');
+  schoolSub.setAttribute('text-anchor', 'middle');
+  schoolSub.setAttribute('font-size', '9.5');
+  schoolSub.setAttribute('font-weight', '600');
+  schoolSub.setAttribute('fill', '#475569');
+  schoolSub.textContent = 'โรงเรียนห้องสอนศึกษา ในพระอุปถัมภ์ฯ · สพม. แม่ฮ่องสอน';
+  svg.appendChild(schoolSub);
+
+  // Bottom Project Reference
+  const footerNote = document.createElementNS(svgNS, 'text');
+  footerNote.setAttribute('x', '300');
+  footerNote.setAttribute('y', '573');
+  footerNote.setAttribute('text-anchor', 'middle');
+  footerNote.setAttribute('font-size', '8.5');
+  footerNote.setAttribute('fill', '#64748b');
+  footerNote.textContent = 'โครงงานคณิตศาสตร์: แบบจำลองโฮโมกราฟีและการวิเคราะห์ขอบเขตความคลาดเคลื่อน (LII Lens Lab)';
+  svg.appendChild(footerNote);
+
+  const authorNote = document.createElementNS(svgNS, 'text');
+  authorNote.setAttribute('x', '300');
+  authorNote.setAttribute('y', '587');
+  authorNote.setAttribute('text-anchor', 'middle');
+  authorNote.setAttribute('font-size', '7.5');
+  authorNote.setAttribute('fill', '#94a3b8');
+  authorNote.textContent = 'ผู้จัดทำ: ชญานุตม์ แจ่มจันทร์, วรวลัญช์ จันทร์วิไลลักษณ์, วรัญญา ศิริรัตน์ | ครูที่ปรึกษา: พรไพลิน ตาไฝ, สาธิต ศิริวัชน์';
+  svg.appendChild(authorNote);
 
   return svg;
 }

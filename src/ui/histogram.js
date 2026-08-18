@@ -1,4 +1,4 @@
-// Canvas renderer for Monte Carlo error distribution histograms
+// Canvas renderer for Monte Carlo error distribution histograms (Light Theme)
 
 export function drawHistogram(canvas, vals, bound) {
   const ctx = canvas.getContext('2d');
@@ -8,12 +8,11 @@ export function drawHistogram(canvas, vals, bound) {
   ctx.clearRect(0, 0, W, H);
 
   // Background
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  ctx.fillStyle = isDark ? '#0f172a' : '#fbfdff';
+  ctx.fillStyle = '#fbfdff';
   ctx.fillRect(0, 0, W, H);
 
   if (!vals || !vals.length) {
-    ctx.fillStyle = isDark ? '#94a3b8' : '#6b7c90';
+    ctx.fillStyle = '#6b7c90';
     ctx.font = '16px system-ui, sans-serif';
     ctx.fillText('Run simulation to see distribution', 26, 42);
     return;
@@ -28,7 +27,7 @@ export function drawHistogram(canvas, vals, bound) {
   const m = { l: 48, r: 22, t: 18, b: 36 };
 
   // Grid lines
-  ctx.strokeStyle = isDark ? '#334155' : '#dfe7f0';
+  ctx.strokeStyle = '#dfe7f0';
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const y = m.t + ((H - m.t - m.b) * i) / 4;
@@ -42,7 +41,7 @@ export function drawHistogram(canvas, vals, bound) {
   const bw = (W - m.l - m.r) / bins;
   counts.forEach((n, i) => {
     const h = ((H - m.t - m.b) * n) / peak;
-    ctx.fillStyle = isDark ? '#38bdf8' : '#2f7af8';
+    ctx.fillStyle = '#2f7af8';
     ctx.fillRect(m.l + i * bw + 1, H - m.b - h, Math.max(1, bw - 2), h);
   });
 
@@ -63,7 +62,7 @@ export function drawHistogram(canvas, vals, bound) {
   }
 
   // Axes Labels
-  ctx.fillStyle = isDark ? '#94a3b8' : '#62758b';
+  ctx.fillStyle = '#62758b';
   ctx.font = '12px system-ui, sans-serif';
   ctx.fillText('0', m.l, H - 12);
   ctx.fillText(maxVal.toFixed(3), W - m.r - 44, H - 12);

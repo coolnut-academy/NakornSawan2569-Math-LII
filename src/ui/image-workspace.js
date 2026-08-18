@@ -321,8 +321,9 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
 
     const overlayRect = overlay.getBoundingClientRect();
     const scale = overlayRect.width > 0 ? (width / overlayRect.width) : 1;
-    const shiftX = dx * nudgeStep * scale;
-    const shiftY = dy * nudgeStep * scale;
+    const stepMove = Math.max(1, Math.round(nudgeStep * scale));
+    const shiftX = dx * stepMove;
+    const shiftY = dy * stepMove;
 
     const newPt = [
       Math.max(0, Math.min(width, currentPt[0] + shiftX)),
@@ -333,10 +334,12 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
     updateNudgePadState();
   }
 
+  const NUDGE_STEPS = [1, 2, 5, 10];
   if (nudgeStepBtn) {
     nudgeStepBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      nudgeStep = nudgeStep === 1 ? 5 : 1;
+      const currentIdx = NUDGE_STEPS.indexOf(nudgeStep);
+      nudgeStep = NUDGE_STEPS[(currentIdx + 1) % NUDGE_STEPS.length];
       updateNudgePadState();
     });
   }
@@ -366,6 +369,27 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
   });
 
   // Precision Loupe (Magnifier Glass) Functionality
+  let loupeRafId = null;
+  let pendingLoupeArgs = null;
+
+  function scheduleLoupeUpdate(point, labelText, clientX, clientY, isTouch = false) {
+    pendingLoupeArgs = { point, labelText, clientX, clientY, isTouch };
+    if (!loupeRafId) {
+      loupeRafId = requestAnimationFrame(() => {
+        loupeRafId = null;
+        if (pendingLoupeArgs) {
+          updateLoupe(
+            pendingLoupeArgs.point,
+            pendingLoupeArgs.labelText,
+            pendingLoupeArgs.clientX,
+            pendingLoupeArgs.clientY,
+            pendingLoupeArgs.isTouch
+          );
+        }
+      });
+    }
+  }
+
   function updateLoupe(point, labelText, clientX, clientY, isTouch = false) {
     if (!loupe || !loupeCanvas || !image.naturalWidth) return;
 
@@ -433,6 +457,11 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
   }
 
   function hideLoupe() {
+    if (loupeRafId) {
+      cancelAnimationFrame(loupeRafId);
+      loupeRafId = null;
+    }
+    pendingLoupeArgs = null;
     if (loupe) loupe.hidden = true;
   }
 
@@ -490,7 +519,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
       overlay.setPointerCapture?.(event.pointerId);
       overlay.classList.add('is-dragging-point');
       media.classList.add('is-dragging-point');
-      updateLoupe(dragStartPt, `C${idx + 1}`, event.clientX, event.clientY, isTouch);
+      scheduleLoupeUpdate(dragStartPt, `C${idx + 1}`, event.clientX, event.clientY, isTouch);
       return;
     }
 
@@ -508,7 +537,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
       overlay.classList.add('is-dragging-point');
       media.classList.add('is-dragging-point');
       const prefix = lastRenderOptions?.pointPrefix || 'P';
-      updateLoupe(dragStartPt, `${prefix}${idx + 1}`, event.clientX, event.clientY, isTouch);
+      scheduleLoupeUpdate(dragStartPt, `${prefix}${idx + 1}`, event.clientX, event.clientY, isTouch);
       return;
     }
   });
@@ -530,7 +559,7 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
       ? `C${draggedItem.index + 1}`
       : `${lastRenderOptions?.pointPrefix || 'P'}${draggedItem.index + 1}`;
 
-    updateLoupe(pt, label, event.clientX, event.clientY, isTouch);
+    scheduleLoupeUpdate(pt, label, event.clientX, event.clientY, isTouch);
 
     if (draggedItem.type === 'corner' && onMoveCorner) {
       onMoveCorner(draggedItem.index, pt, { committed: false });
@@ -711,9 +740,26 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
 
     // In-place SVG element updates during active drags to preserve DOM nodes and Pointer Capture in WebKit
     if (draggedItem !== null && overlay.childElementCount > 0) {
-      const calPolyline = overlay.querySelector('.calibration-outline');
+      const displayedWidth = media.getBoundingClientRect().width || width;
+      const unitsPerCssPixel = width / displayedWidth;
+      const labelGap = 12 * unitsPerCssPixel;
+      const cornerFontSize = 18 * unitsPerCssPixel;
+      const coordinateFontSize = 13 * unitsPerCssPixel;
+      const dimensionInset = 34 * unitsPerCssPixel;
+      const dimensionOutset = 22 * unitsPerCssPixel;
+      const dimensionFontSize = 24 * unitsPerCssPixel;
+
+      const calPolyline = overlay.querySelector('polyline.calibration-outline');
       if (calPolyline && visibleCorners.length > 1) {
         calPolyline.setAttribute('points', pointString(visibleCorners));
+      }
+
+      const closingLine = overlay.querySelector('line.calibration-outline');
+      if (closingLine && visibleCorners.length === 4) {
+        closingLine.setAttribute('x1', visibleCorners[3][0]);
+        closingLine.setAttribute('y1', visibleCorners[3][1]);
+        closingLine.setAttribute('x2', visibleCorners[0][0]);
+        closingLine.setAttribute('y2', visibleCorners[0][1]);
       }
 
       visibleCorners.forEach((point, index) => {
@@ -725,15 +771,49 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
           });
           const alignRight = index === 1 || index === 2;
           const isBottom = index > 1;
-          const labelGap = 12 * (width / (media.getBoundingClientRect().width || width));
           const labelX = point[0] + (alignRight ? -labelGap : labelGap);
           const labelY = point[1] + (isBottom ? labelGap * 1.45 : labelGap * 0.35);
           group.querySelectorAll('text').forEach((txt, tIdx) => {
             txt.setAttribute('x', labelX);
-            txt.setAttribute('y', tIdx === 0 ? labelY : labelY + (13 * (width / (media.getBoundingClientRect().width || width))) * 1.15);
+            txt.setAttribute('y', tIdx === 0 ? labelY : labelY + coordinateFontSize * 1.15);
           });
         }
       });
+
+      // Update dimension lines if scale is displayed
+      if (showScale && corners.length === 4) {
+        const dimLines = overlay.querySelectorAll('.dimension-line');
+        const dimLabels = overlay.querySelectorAll('.dimension-label');
+        const dimensions = [
+          {
+            a: [corners[0][0], corners[0][1] + dimensionInset],
+            b: [corners[1][0], corners[1][1] + dimensionInset]
+          },
+          {
+            a: [corners[1][0] + dimensionOutset, corners[1][1]],
+            b: [corners[2][0] + dimensionOutset, corners[2][1]]
+          }
+        ];
+        dimLines.forEach((line, idx) => {
+          if (dimensions[idx]) {
+            line.setAttribute('x1', dimensions[idx].a[0]);
+            line.setAttribute('y1', dimensions[idx].a[1]);
+            line.setAttribute('x2', dimensions[idx].b[0]);
+            line.setAttribute('y2', dimensions[idx].b[1]);
+          }
+        });
+        dimLabels.forEach((lbl, idx) => {
+          if (dimensions[idx]) {
+            const x = (dimensions[idx].a[0] + dimensions[idx].b[0]) / 2;
+            const y = (dimensions[idx].a[1] + dimensions[idx].b[1]) / 2;
+            lbl.setAttribute('x', x);
+            lbl.setAttribute('y', idx === 0 ? y - dimensionFontSize * 0.45 : y);
+            if (idx === 1) {
+              lbl.setAttribute('transform', `rotate(90 ${x} ${y})`);
+            }
+          }
+        });
+      }
 
       const measPolyline = overlay.querySelector('.measurement-line');
       if (measPolyline && visiblePoints.length > 1) {
@@ -747,7 +827,6 @@ export function createImageWorkspace(container, { onPoint, onMovePoint, onMoveCo
             c.setAttribute('cx', point[0]);
             c.setAttribute('cy', point[1]);
           });
-          const labelGap = 12 * (width / (media.getBoundingClientRect().width || width));
           const placements = [
             { dx: -labelGap, dy: -labelGap * 0.7 },
             { dx: 0, dy: -labelGap * 1.35 },
